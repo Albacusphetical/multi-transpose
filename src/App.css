@@ -1,0 +1,113 @@
+.keybind-manager-container {
+    position: sticky;
+    bottom: 0px;
+    background: ghostwhite;
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    align-content: center;
+    justify-content: center;
+    margin-top: auto;
+}
+
+.keybind-manager-content {
+    flex-wrap: wrap;
+    display: flex;
+    justify-content: space-between;
+}
+
+.keybind-container {
+    margin: 10px;
+}
+
+.keybind-purpose {
+    margin-right: 5px;
+}
+
+.transpose-matrix-container {
+    display: flex;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-top: 25px;
+    margin-bottom: 25px;
+    min-width: 80vw;
+    max-width: 80vw;
+    min-height: 80vh;
+    padding: 25px;
+    flex-direction: row;
+    align-content: flex-start;
+    background: linear-gradient(to bottom, #ffffff 0%, #f8f8f8 100%);
+    box-shadow: 0 0 0 1px rgba(17, 20, 24, 0.15);
+}
+
+.transpose-matrix-empty {
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    min-height: 80vh;
+    font-weight: 300;
+    font-size: xx-large;
+    color: darkslateblue;
+}
+
+
+.transpose-matrix-content {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.transpose-matrix-item {
+    display: flex;
+    flex-direction: column;
+    min-width: 50px;
+    min-height: 65px;
+    height: fit-content;
+}
+
+.transpose-matrix-item-no-data {
+    border: dashed;
+    border-color: lightgray;
+}
+
+.transpose-matrix-index {
+    margin-bottom: 5px;
+    font-size: 10px;
+    font-weight: 100;
+}
+
+.transpose-input {
+    position: sticky;
+    top: 5px;
+    margin: 25px;
+    max-width: 75vw;
+    background: ghostwhite;
+    padding: 5px;
+}
+
+#monitor-body {
+    overflow: hidden;
+}
+
+.transposes-monitor {
+    justify-content: space-evenly;
+    width: 100%;
+}
+
+.bp5-toast-container.bp5-toast-container-top {
+    position: fixed!important;
+}
+
+/* intended for transpose monitor window only */
+.bp5-toast-container.bp5-toast-container-bottom {
+    padding: 0
+}
+
+.bp5-toast-container-bottom > .bp5-toast {
+    min-width: 100vw;
+}
