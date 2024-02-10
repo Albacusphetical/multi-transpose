@@ -1,6 +1,4 @@
-import {useState} from "react";
 import {Button} from "@blueprintjs/core";
-import {emit} from "@tauri-apps/api/event";
 
 const KeyBind = ({value = null, name, purpose, isListening = false, listener = () => {}}) => {
     return (

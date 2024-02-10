@@ -1,3 +1,4 @@
+import pkg from "../package.json";
 import "./App.css";
 import {WebviewWindow} from "@tauri-apps/api/window";
 import {useContext, useEffect, useState} from "react";
@@ -90,7 +91,7 @@ function App() {
     // garbage/unreadable (but quick to use) way of accessing current state within an event listener but idc - for now
     setKeybindManagerIsListening(listening => {
       if (listening) {
-        // prevent use of keybinds
+        // prevent use of keybinds within the app
         return listening
       }
 
@@ -210,23 +211,30 @@ function App() {
           </Tooltip>
         </span>
 
-        <Button
-            disabled={!canTranspose}
-            onClick={async () => {
-              const webview = await spawnTransposeMonitor();
-              setTransposeMonitorWebview(webview)
-            }}
-        >
-          Spawn Monitor
-        </Button>
+        <Tooltip content={"View transposes while playing"}>
+          <Button
+              disabled={!canTranspose}
+              onClick={async () => {
+                const webview = await spawnTransposeMonitor();
+                setTransposeMonitorWebview(webview)
+              }}
+          >
+            Spawn Monitor
+          </Button>
+        </Tooltip>
 
         <TransposeMatrix index={selectedIndex} transposes={transposes}/>
+
+        <span className={"version"}>
+          <span>Version {pkg.version}</span>
+          <span>Made by Albacusphetical</span>
+        </span>
 
         <KeyBindManager
             onListen={(isListening) => setKeybindManagerIsListening(isListening)}
             onKeybindSet={(e) => {
               if (paused && e.canTranspose) {
-                // all keybinds set
+                // all keybinds set, you can transpose then
 
                 emit("backend_event", {pause: false})
                 setIsPaused(false);
@@ -236,6 +244,7 @@ function App() {
               setKeybindConfig(e);
             }}
         />
+
       </div>
   );
 }

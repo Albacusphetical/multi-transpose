@@ -1,7 +1,7 @@
 import KeyBind from "./KeyBind.jsx";
 import {emit} from "@tauri-apps/api/event";
-import {useContext, useEffect, useState} from "react";
-import {OverlayToaster, Section, SectionCard} from "@blueprintjs/core";
+import {useEffect, useState} from "react";
+import {Section, SectionCard} from "@blueprintjs/core";
 import {useDatabase} from "./DatabaseProvider.jsx";
 import {getKeybindConfig, updateKeybindConfig} from "../queries.js";
 import {appToaster} from "../App.jsx";

@@ -7,9 +7,20 @@
   },
   "package": {
     "productName": "multi-transpose",
-    "version": "0.0.0"
+    "version": "1.0.0"
   },
   "tauri": {
+    "updater": {
+      "active": true,
+      "endpoints": [
+        "https://gist.githubusercontent.com/Albacusphetical/b36c4d985ad1466dbbcfd710e1c6544b/raw/69a928a4792a41f7312c37b0a7e4def7b140e1a2/"
+      ],
+      "windows": {
+        "installMode": "passive"
+      },
+      "dialog": true,
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDc1MTdFREQ5RkUyQ0YyRTUKUldUbDhpeisyZTBYZFlveVUwVnRPM1J4RDJocWo5QmRaeG1zNUJteHZ5b0lCb29jRlhManhjRi8K"
+    },
     "allowlist": {
       "all": false,
       "shell": {
@@ -23,13 +34,23 @@
     "bundle": {
       "active": true,
       "targets": "all",
-      "identifier": "com.tauri.multitranspose",
+      "identifier": "com.tauri.multi-transpose",
       "icon": [
         "icons/32x32.png",
         "icons/128x128.png",
         "icons/128x128@2x.png",
         "icons/icon.icns",
-        "icons/icon.ico"
+        "icons/icon.ico",
+        "icons/Square30x30Logo.png",
+        "icons/Square71x71Logo.png",
+        "icons/Square44x44Logo.png",
+        "icons/Square89x89Logo.png",
+        "icons/Square107x107Logo.png",
+        "icons/Square142x142Logo.png",
+        "icons/Square150x150Logo.png",
+        "icons/Square284x284Logo.png",
+        "icons/Square310x310Logo.png",
+        "icons/StoreLogo.png"
       ]
     },
     "security": {

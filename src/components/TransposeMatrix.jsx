@@ -1,5 +1,3 @@
-import {Card, Tooltip} from "@blueprintjs/core";
-import {emit} from "@tauri-apps/api/event";
 import TransposeMatrixItem from "./TransposeMatrixItem.jsx";
 
 const TransposeMatrix = ({index, transposes}) => {

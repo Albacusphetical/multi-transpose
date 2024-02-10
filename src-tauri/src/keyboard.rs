@@ -17,31 +17,27 @@ pub static mut PREVIOUS_TRANSPOSE_BIND: Option<u64> = None;
 pub fn callback(event: Event, app_handle: &AppHandle, last_press: &Arc<Mutex<Option<Instant>>>) {
     match event.event_type {
         EventType::KeyPress(key) => unsafe {
-            let pause_key = key_from_code(PAUSE_BIND.unwrap() as u16);
-            let next_transpose_key = key_from_code(NEXT_TRANSPOSE_BIND.unwrap() as u16);
-            let previous_transpose_key = key_from_code(PREVIOUS_TRANSPOSE_BIND.unwrap() as u16);
+            #[cfg(target_os = "windows")]
+                let pause_key = key_from_code(PAUSE_BIND.unwrap() as u16);
+            #[cfg(target_os = "windows")]
+                let next_transpose_key = key_from_code(NEXT_TRANSPOSE_BIND.unwrap() as u16);
+            #[cfg(target_os = "windows")]
+                let previous_transpose_key = key_from_code(PREVIOUS_TRANSPOSE_BIND.unwrap() as u16);
 
-            // unsure if this will be needed for cross-platform, remove if above is ok later
-            // #[cfg(target_os = "windows")]
-            //     let pause_key = key_from_code(PAUSE_BIND.unwrap() as u16);
-            // #[cfg(target_os = "windows")]
-            //     let next_transpose_key = key_from_code(NEXT_TRANSPOSE_BIND.unwrap() as u16);
-            // #[cfg(target_os = "windows")]
-            //     let previous_transpose_key = key_from_code(PREVIOUS_TRANSPOSE_BIND.unwrap() as u16);
+            #[cfg(target_os = "linux")]
+                let pause_key = key_from_code(PAUSE_BIND.unwrap() as u32);
+            #[cfg(target_os = "linux")]
+                let next_transpose_key = key_from_code(NEXT_TRANSPOSE_BIND.unwrap() as u32);
+            #[cfg(target_os = "linux")]
+                let previous_transpose_key = key_from_code(PREVIOUS_TRANSPOSE_BIND.unwrap() as u32);
 
-            // #[cfg(target_os = "linux")]
-            // let pause_key = key_from_code(PAUSE_BIND.unwrap() as u16);
-            // #[cfg(target_os = "linux")]
-            // let next_transpose_key = key_from_code(NEXT_TRANSPOSE_BIND.unwrap() as u16);
-            // #[cfg(target_os = "linux")]
-            // let previous_transpose_key = key_from_code(PREVIOUS_TRANSPOSE_BIND.unwrap() as u16);
-            //
-            // #[cfg(target_os = "macos")]
-            //     let pause_key = key_from_code(PAUSE_BIND.unwrap() as u16);
-            // #[cfg(target_os = "macos")]
-            //     let next_transpose_key = key_from_code(NEXT_TRANSPOSE_BIND.unwrap() as u16);
-            // #[cfg(target_os = "macos")]
-            //     let previous_transpose_key = key_from_code(PREVIOUS_TRANSPOSE_BIND.unwrap() as u16);
+            // no clue if this will compile on mac
+            #[cfg(target_os = "macos")]
+                let pause_key = key_from_code(PAUSE_BIND.unwrap() as u16);
+            #[cfg(target_os = "macos")]
+                let next_transpose_key = key_from_code(NEXT_TRANSPOSE_BIND.unwrap() as u16);
+            #[cfg(target_os = "macos")]
+                let previous_transpose_key = key_from_code(PREVIOUS_TRANSPOSE_BIND.unwrap() as u16);
 
 
             if !PAUSE_BIND.is_none() && key == pause_key {
@@ -71,7 +67,12 @@ pub fn callback(event: Event, app_handle: &AppHandle, last_press: &Arc<Mutex<Opt
 }
 
 pub unsafe fn send_key(code: u64) {
-    let code = code as u16;
+    #[cfg(target_os = "windows")]
+        let code = code as u16;
+    #[cfg(target_os = "macos")] // unsure if this will compile
+        let code = code as u16;
+    #[cfg(target_os = "linux")]
+        let code = code as u32;
 
     match simulate(&EventType::KeyPress(key_from_code(code))) {
         Ok(()) => (),
