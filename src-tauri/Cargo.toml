@@ -1,25 +1,32 @@
 [package]
 name = "multi-transpose"
-version = "0.0.0"
+version = "0.1.0"
 description = "A Tauri App"
-authors = ["you"]
+authors = ["Albacusphetical"]
 license = ""
 repository = ""
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[build-dependencies]
-tauri-build = { version = "1.5", features = [] }
+[package.metadata.patch]
+crates = ["rdev"]
+
+[patch.crates-io]
+rdev = { path = "./target/patch/rdev-0.5.3" }
 
 [dependencies]
 tauri = { version = "1.5", features = [ "window-create", "shell-open"] }
 tauri-plugin-sql = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1", features = ["sqlite"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-inputbot = { git = "https://github.com/obv-mikhail/InputBot", branch = "develop" }
-winapi = { version = "0.3.9", features = ["dinput", "dinputd", "basetsd", "winuser"] }
 lazy_static = { version = "1.4.0", features = [] }
+rdev = "0.5.3"
+
+[build-dependencies]
+patch-crate = { git = "https://github.com/mokeyish/cargo-patch-crate" }
+tauri-build = { version = "1.5", features = [] }
+
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem
