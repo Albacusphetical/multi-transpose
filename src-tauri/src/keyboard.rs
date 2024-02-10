@@ -1,12 +1,8 @@
-extern crate winapi;
-
-use std::ptr::null;
 use tauri::{AppHandle, Manager};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
+use rdev::{Event, EventType, simulate, key_from_code, Key};
 use serde_json::json;
-use winapi::um::winuser::{INPUT, INPUT_KEYBOARD, KEYBDINPUT, SendInput, KEYEVENTF_KEYUP, KEYEVENTF_SCANCODE, KEYEVENTF_EXTENDEDKEY, MapVirtualKeyW, MAPVK_VK_TO_VSC};
-use winapi::shared::minwindef::{WORD, DWORD};
 use crate::{CURRENT_TRANSPOSE, SELECTED_INDEX, transpose, transpose_up, transpose_down, PAUSED, TRANSPOSES};
 use crate::event_processing::Payload;
 
@@ -17,70 +13,83 @@ pub static mut TRANSPOSE_DOWN_BIND: Option<u64> = None;
 pub static mut NEXT_TRANSPOSE_BIND: Option<u64> = None;
 pub static mut PREVIOUS_TRANSPOSE_BIND: Option<u64> = None;
 
-// hold down the key
-pub unsafe fn keydown(key: u64) {
-    let key = MapVirtualKeyW(key as u32, MAPVK_VK_TO_VSC) as WORD;
+// callback for rdev listener for keyboard events
+pub fn callback(event: Event, app_handle: &AppHandle, last_press: &Arc<Mutex<Option<Instant>>>) {
+    match event.event_type {
+        EventType::KeyPress(key) => unsafe {
+            let pause_key = key_from_code(PAUSE_BIND.unwrap() as u16);
+            let next_transpose_key = key_from_code(NEXT_TRANSPOSE_BIND.unwrap() as u16);
+            let previous_transpose_key = key_from_code(PREVIOUS_TRANSPOSE_BIND.unwrap() as u16);
 
-    let mut kbd_input: INPUT = INPUT {
-        type_: INPUT_KEYBOARD,
-        u: unsafe { std::mem::zeroed() },
+            // unsure if this will be needed for cross-platform, remove if above is ok later
+            // #[cfg(target_os = "windows")]
+            //     let pause_key = key_from_code(PAUSE_BIND.unwrap() as u16);
+            // #[cfg(target_os = "windows")]
+            //     let next_transpose_key = key_from_code(NEXT_TRANSPOSE_BIND.unwrap() as u16);
+            // #[cfg(target_os = "windows")]
+            //     let previous_transpose_key = key_from_code(PREVIOUS_TRANSPOSE_BIND.unwrap() as u16);
+
+            // #[cfg(target_os = "linux")]
+            // let pause_key = key_from_code(PAUSE_BIND.unwrap() as u16);
+            // #[cfg(target_os = "linux")]
+            // let next_transpose_key = key_from_code(NEXT_TRANSPOSE_BIND.unwrap() as u16);
+            // #[cfg(target_os = "linux")]
+            // let previous_transpose_key = key_from_code(PREVIOUS_TRANSPOSE_BIND.unwrap() as u16);
+            //
+            // #[cfg(target_os = "macos")]
+            //     let pause_key = key_from_code(PAUSE_BIND.unwrap() as u16);
+            // #[cfg(target_os = "macos")]
+            //     let next_transpose_key = key_from_code(NEXT_TRANSPOSE_BIND.unwrap() as u16);
+            // #[cfg(target_os = "macos")]
+            //     let previous_transpose_key = key_from_code(PREVIOUS_TRANSPOSE_BIND.unwrap() as u16);
+
+
+            if !PAUSE_BIND.is_none() && key == pause_key {
+                if TRANSPOSE_UP_BIND.is_none()
+                    || TRANSPOSE_DOWN_BIND.is_none()
+                    || NEXT_TRANSPOSE_BIND.is_none()
+                    || PREVIOUS_TRANSPOSE_BIND.is_none()
+                {
+                    // prevent resuming if there are required keybindings still
+                    return;
+                }
+
+                PAUSED = !PAUSED;
+
+                let json = serde_json::to_string(&json!({"paused": PAUSED})).unwrap();
+                app_handle.emit_all("frontend_event", Payload { message: json });
+            }
+            else if !NEXT_TRANSPOSE_BIND.is_none() && key == next_transpose_key {
+                next_transpose_bind_fn(app_handle.app_handle(), last_press.clone());
+            }
+            else if !PREVIOUS_TRANSPOSE_BIND.is_none() && key == previous_transpose_key {
+                previous_transpose_bind_fn(app_handle.app_handle(), last_press.clone());
+            }
+        },
+        _ => (),
     };
-
-    *kbd_input.u.ki_mut() = KEYBDINPUT {
-        wVk: 0,
-        wScan: 0xE0,
-        dwFlags: KEYEVENTF_SCANCODE,
-        time: 0,
-        dwExtraInfo: 0
-    };
-
-    SendInput(1, &mut kbd_input, std::mem::size_of::<INPUT>() as i32);
-
-    *kbd_input.u.ki_mut() = KEYBDINPUT {
-        wVk: 0,
-        wScan: key,
-        dwFlags: KEYEVENTF_SCANCODE | KEYEVENTF_EXTENDEDKEY,
-        time: 0,
-        dwExtraInfo: 0,
-    };
-
-    SendInput(1, &mut kbd_input, std::mem::size_of::<INPUT>() as i32);
 }
 
+pub unsafe fn send_key(code: u64) {
+    let code = code as u16;
 
-// release the key
-pub unsafe fn keyup(key: u64) {
-    let key = MapVirtualKeyW(key as u32, MAPVK_VK_TO_VSC) as WORD;
+    match simulate(&EventType::KeyPress(key_from_code(code))) {
+        Ok(()) => (),
+        Err(SimulateError) => {
+            println!("Failed to send KeyPress event for key: {:?}", SimulateError);
+        }
+    }
 
-    let mut kbd_input: INPUT = INPUT {
-        type_: INPUT_KEYBOARD,
-        u: unsafe { std::mem::zeroed() },
-    };
-
-    // keyup
-    *kbd_input.u.ki_mut() = KEYBDINPUT {
-        wVk: 0,
-        wScan: key,
-        dwFlags: KEYEVENTF_SCANCODE | KEYEVENTF_KEYUP | KEYEVENTF_EXTENDEDKEY,
-        time: 0,
-        dwExtraInfo: 0,
-    };
-
-    SendInput(1, &mut kbd_input, std::mem::size_of::<INPUT>() as i32);
-
-    *kbd_input.u.ki_mut() = KEYBDINPUT {
-        wVk: 0,
-        wScan: 0xE0, // Extended scan code for arrow keys when NumLock is on
-        dwFlags: KEYEVENTF_SCANCODE | KEYEVENTF_KEYUP,
-        time: 0,
-        dwExtraInfo: 0,
-    };
-
-    SendInput(1, &mut kbd_input, std::mem::size_of::<INPUT>() as i32);
+    match simulate(&EventType::KeyRelease(key_from_code(code))) {
+        Ok(()) => (),
+        Err(SimulateError) => {
+            println!("Failed to send KeyPress event for key: {:?}", SimulateError);
+        }
+    }
 }
 
 // keybinding callback functions
-pub unsafe fn transpose_up_bind_fn(app_handle: AppHandle, last_press: Arc<Mutex<Option<Instant>>>) {
+pub unsafe fn next_transpose_bind_fn(app_handle: AppHandle, last_press: Arc<Mutex<Option<Instant>>>) {
     if PAUSED {
         return;
     }
@@ -107,7 +116,7 @@ pub unsafe fn transpose_up_bind_fn(app_handle: AppHandle, last_press: Arc<Mutex<
     app_handle.emit_all("frontend_event", Payload { message: json}).unwrap();
 }
 
-pub unsafe fn transpose_down_bind_fn(app_handle: AppHandle, last_press: Arc<Mutex<Option<Instant>>>) {
+pub unsafe fn previous_transpose_bind_fn(app_handle: AppHandle, last_press: Arc<Mutex<Option<Instant>>>) {
     if PAUSED {
         return;
     }

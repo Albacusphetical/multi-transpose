@@ -4,15 +4,15 @@
 mod event_processing;
 mod keyboard;
 
-use crate::keyboard::{TRANSPOSE_DOWN_BIND, TRANSPOSE_UP_BIND, keydown, keyup};
+use crate::keyboard::{TRANSPOSE_DOWN_BIND, TRANSPOSE_UP_BIND, send_key};
 
-use tauri::{Manager};
+use tauri::Manager;
 use tauri_plugin_sql::{Builder, Migration, MigrationKind};
 use std::sync::{Arc, Mutex};
 use std::thread;
-use std::time::{Duration, Instant};
-use inputbot::KeybdKey::{F24Key};
+use std::time::{Instant};
 use lazy_static::lazy_static;
+use rdev::listen;
 
 // first time using rust... forgive me if you see sacrilegious things :-)
 
@@ -58,13 +58,11 @@ unsafe fn transpose(transpose: i32) {
 }
 
 unsafe fn transpose_up() {
-    keydown(TRANSPOSE_UP_BIND.unwrap());
-    keyup(TRANSPOSE_UP_BIND.unwrap());
+    send_key(TRANSPOSE_UP_BIND.unwrap());
 }
 
 unsafe fn transpose_down() {
-    keydown(TRANSPOSE_DOWN_BIND.unwrap());
-    keyup(TRANSPOSE_DOWN_BIND.unwrap());
+    send_key(TRANSPOSE_DOWN_BIND.unwrap());
 }
 
 fn main() {
@@ -101,23 +99,32 @@ fn main() {
         .setup(|app| {
             // app ready
 
-            // use the app handle for communication with the frontend
+            // use the tauri app handle for communication with the frontend
             let app_ = Arc::new(Mutex::new(app.handle()));
             let last_press = Arc::new(Mutex::new(None::<Instant>));
 
             let app_handle = app_.clone();
-            app.listen_global("backend_event", move |event| unsafe {
+            app.listen_global("backend_event", {
+                let app_handle = Arc::clone(&app_handle);
                 let last_press = Arc::clone(&last_press);
-                let app_handle = app_handle.lock().unwrap().clone();
-                event_processing::process_event(event, app_handle, last_press);
+                move |event| unsafe {
+                    let last_press = Arc::clone(&last_press);
+                    let app_handle = app_handle.lock().unwrap().clone();
+                    event_processing::process_event(event, app_handle, last_press);
+                }
             });
 
-            // random bind to make sure inputbot starts listening until app shutdown (F24 is a key?)
-            F24Key.bind(|| {});
-
-            thread::spawn(|| {
-                inputbot::handle_input_events(true);
+            thread::spawn({
+                let app_handle = app_.clone();
+                let last_press = Arc::clone(&last_press);
+                move || {
+                    let app_handle = app_handle.lock().unwrap().clone();
+                    if let Err(error) = listen(move |event| keyboard::callback(event, &app_handle, &last_press)) {
+                        println!("Error: {:?}", error);
+                    }
+                }
             });
+
 
             Ok(())
         })

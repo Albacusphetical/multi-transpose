@@ -1,0 +1,137 @@
+diff --git a/src/lib.rs b/src/lib.rs
+index 70b72ef..37f78b2 100644
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -228,23 +228,45 @@ mod macos;
+ #[cfg(target_os = "macos")]
+ pub use crate::macos::Keyboard;
+ #[cfg(target_os = "macos")]
+-use crate::macos::{display_size as _display_size, listen as _listen, simulate as _simulate};
++use crate::macos::{display_size as _display_size, listen as _listen, simulate as _simulate, key_from_code as _key_from_code};
++#[cfg(target_os = "macos")]
++use core_graphics::event::CGKeyCode;
++
+ 
+ #[cfg(target_os = "linux")]
+ mod linux;
+ #[cfg(target_os = "linux")]
+ pub use crate::linux::Keyboard;
+ #[cfg(target_os = "linux")]
+-use crate::linux::{display_size as _display_size, listen as _listen, simulate as _simulate};
++use crate::linux::{display_size as _display_size, listen as _listen, simulate as _simulate, key_from_code as _key_from_code};
++#[cfg(target_os = "linux")]
++use std::os::raw::c_uint;
+ 
+ #[cfg(target_os = "windows")]
+ mod windows;
+ #[cfg(target_os = "windows")]
+ pub use crate::windows::Keyboard;
+ #[cfg(target_os = "windows")]
+-use crate::windows::{display_size as _display_size, listen as _listen, simulate as _simulate};
++use crate::windows::{display_size as _display_size, listen as _listen, simulate as _simulate, key_from_code as _key_from_code};
+ #[cfg(target_os = "windows")]
+-use crate::windows::{key_from_code};
++use winapi::shared::minwindef::WORD;
++
++
++#[cfg(target_os = "windows")]
++pub fn key_from_code(code: WORD) -> Key {
++    _key_from_code(code)
++}
++
++#[cfg(target_os = "linux")]
++pub fn key_from_code(code: c_uint) -> Key {
++    _key_from_code(code)
++}
++
++#[cfg(target_os = "macos")]
++pub fn key_from_code(code: CGKeyCode) -> Key {
++    _key_from_code(code)
++}
++
+ /// Listening to global events. Caveat: On MacOS, you require the listen
+ /// loop needs to be the primary app (no fork before) and need to have accessibility
+ /// settings enabled.
+diff --git a/src/linux/mod.rs b/src/linux/mod.rs
+index bf073fa..7118c38 100644
+--- a/src/linux/mod.rs
++++ b/src/linux/mod.rs
+@@ -11,6 +11,8 @@ mod listen;
+ mod simulate;
+ 
+ pub use crate::linux::display::display_size;
++pub use crate::linux::keycodes::key_from_code;
++
+ #[cfg(feature = "unstable_grab")]
+ pub use crate::linux::grab::grab;
+ pub use crate::linux::keyboard::Keyboard;
+diff --git a/src/macos/mod.rs b/src/macos/mod.rs
+index 43ce23f..d199f4c 100644
+--- a/src/macos/mod.rs
++++ b/src/macos/mod.rs
+@@ -8,6 +8,8 @@ mod listen;
+ mod simulate;
+ 
+ pub use crate::macos::display::display_size;
++pub use crate::macos::keycodes::key_from_code;
++
+ #[cfg(feature = "unstable_grab")]
+ pub use crate::macos::grab::grab;
+ pub use crate::macos::keyboard::Keyboard;
+diff --git a/src/windows/mod.rs b/src/windows/mod.rs
+index f85415d..457252d 100644
+--- a/src/windows/mod.rs
++++ b/src/windows/mod.rs
+@@ -10,9 +10,10 @@ mod listen;
+ mod simulate;
+ 
+ pub use crate::windows::display::display_size;
++pub use crate::windows::keycodes::key_from_code;
++
+ #[cfg(feature = "unstable_grab")]
+ pub use crate::windows::grab::grab;
+ pub use crate::windows::keyboard::Keyboard;
+ pub use crate::windows::listen::listen;
+ pub use crate::windows::simulate::simulate;
+-pub use crate::windows::keycodes::key_from_code;
+\ No newline at end of file
+diff --git a/src/windows/simulate.rs b/src/windows/simulate.rs
+index cd62e22..b9190dd 100644
+--- a/src/windows/simulate.rs
++++ b/src/windows/simulate.rs
+@@ -7,12 +7,14 @@ use winapi::shared::minwindef::{DWORD, UINT, WORD};
+ use winapi::shared::ntdef::LONG;
+ use winapi::um::winuser::{
+     GetSystemMetrics, INPUT_u, SendInput, INPUT, INPUT_KEYBOARD, INPUT_MOUSE, KEYBDINPUT,
+-    KEYEVENTF_KEYUP, MOUSEEVENTF_ABSOLUTE, MOUSEEVENTF_HWHEEL, MOUSEEVENTF_LEFTDOWN,
++    KEYEVENTF_KEYUP, KEYEVENTF_SCANCODE, KEYEVENTF_EXTENDEDKEY, MOUSEEVENTF_ABSOLUTE, MOUSEEVENTF_HWHEEL, MOUSEEVENTF_LEFTDOWN,
+     MOUSEEVENTF_LEFTUP, MOUSEEVENTF_MIDDLEDOWN, MOUSEEVENTF_MIDDLEUP, MOUSEEVENTF_MOVE,
+     MOUSEEVENTF_RIGHTDOWN, MOUSEEVENTF_RIGHTUP, MOUSEEVENTF_VIRTUALDESK, MOUSEEVENTF_WHEEL,
+     MOUSEEVENTF_XDOWN, MOUSEEVENTF_XUP, MOUSEINPUT, SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN,
+     WHEEL_DELTA,
++    MapVirtualKeyW, MAPVK_VK_TO_VSC
+ };
++
+ /// Not defined in win32 but define here for clarity
+ static KEYEVENTF_KEYDOWN: DWORD = 0;
+ 
+@@ -77,11 +79,17 @@ pub fn simulate(event_type: &EventType) -> Result<(), SimulateError> {
+     match event_type {
+         EventType::KeyPress(key) => {
+             let code = code_from_key(*key).ok_or(SimulateError)?;
+-            sim_keyboard_event(KEYEVENTF_KEYDOWN, code, 0)
++            let directinput_compatible_code = unsafe { MapVirtualKeyW(code as u32, MAPVK_VK_TO_VSC) as WORD };
++
++            sim_keyboard_event(KEYEVENTF_SCANCODE, 0, 0xE0);
++            sim_keyboard_event(KEYEVENTF_SCANCODE | KEYEVENTF_EXTENDEDKEY, 0, directinput_compatible_code)
+         }
+         EventType::KeyRelease(key) => {
+             let code = code_from_key(*key).ok_or(SimulateError)?;
+-            sim_keyboard_event(KEYEVENTF_KEYUP, code, 0)
++            let directinput_compatible_code = unsafe { MapVirtualKeyW(code as u32, MAPVK_VK_TO_VSC) as WORD };
++
++            sim_keyboard_event(KEYEVENTF_SCANCODE | KEYEVENTF_KEYUP | KEYEVENTF_EXTENDEDKEY, 0, directinput_compatible_code);
++            sim_keyboard_event(KEYEVENTF_SCANCODE | KEYEVENTF_KEYUP, 0, 0xE0)
+         }
+         EventType::ButtonPress(button) => match button {
+             Button::Left => sim_mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0),
