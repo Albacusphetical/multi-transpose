@@ -1,10 +1,12 @@
 use tauri::{AppHandle, Manager};
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use rdev::{Event, EventType, simulate, key_from_code, Key};
 use serde_json::json;
 use crate::{CURRENT_TRANSPOSE, SELECTED_INDEX, transpose, transpose_up, transpose_down, PAUSED, TRANSPOSES};
 use crate::event_processing::Payload;
+use lazy_static::lazy_static;
 
 // keybindings
 pub static mut PAUSE_BIND: Option<u64> = None;
@@ -12,6 +14,38 @@ pub static mut TRANSPOSE_UP_BIND: Option<u64> = None;
 pub static mut TRANSPOSE_DOWN_BIND: Option<u64> = None;
 pub static mut NEXT_TRANSPOSE_BIND: Option<u64> = None;
 pub static mut PREVIOUS_TRANSPOSE_BIND: Option<u64> = None;
+
+// safety for held keys, a keybind action should be only executed on the first keypress
+lazy_static! {
+    static ref KEY_HELD: Mutex<HashMap<Key, bool>> = Mutex::new(HashMap::new());
+}
+
+fn insert_key_is_held_value(key: Key, value: bool) {
+    KEY_HELD.lock().unwrap().insert(key, value);
+}
+
+fn get_key_is_held_value(key: &Key) -> bool {
+    let key = KEY_HELD.lock().unwrap().get(key).cloned();
+
+    if key.is_none() {
+        return false;
+    }
+
+    key.unwrap()
+}
+
+fn key_held_contains(key: &Key) -> bool {
+    KEY_HELD.lock().unwrap().contains_key(key)
+}
+
+unsafe fn check_key_held(key: Key) -> bool {
+    if !key_held_contains(&key) {
+        insert_key_is_held_value(key, false);
+        return false;
+    }
+
+    get_key_is_held_value(&key)
+}
 
 // callback for rdev listener for keyboard events
 pub fn callback(event: Event, app_handle: &AppHandle, last_press: &Arc<Mutex<Option<Instant>>>) {
@@ -41,6 +75,12 @@ pub fn callback(event: Event, app_handle: &AppHandle, last_press: &Arc<Mutex<Opt
 
 
             if !PAUSE_BIND.is_none() && key == pause_key {
+                if check_key_held(pause_key) {
+                    return;
+                }
+
+                insert_key_is_held_value(pause_key, true);
+
                 if TRANSPOSE_UP_BIND.is_none()
                     || TRANSPOSE_DOWN_BIND.is_none()
                     || NEXT_TRANSPOSE_BIND.is_none()
@@ -56,10 +96,56 @@ pub fn callback(event: Event, app_handle: &AppHandle, last_press: &Arc<Mutex<Opt
                 app_handle.emit_all("frontend_event", Payload { message: json });
             }
             else if !NEXT_TRANSPOSE_BIND.is_none() && key == next_transpose_key {
+                if check_key_held(next_transpose_key) {
+                    return;
+                }
+
+                insert_key_is_held_value(next_transpose_key, true);
+
                 next_transpose_bind_fn(app_handle.app_handle(), last_press.clone());
             }
             else if !PREVIOUS_TRANSPOSE_BIND.is_none() && key == previous_transpose_key {
+                if check_key_held(previous_transpose_key) {
+                    return;
+                }
+
+                insert_key_is_held_value(previous_transpose_key, true);
+
                 previous_transpose_bind_fn(app_handle.app_handle(), last_press.clone());
+            }
+        },
+        EventType::KeyRelease(key) => unsafe {
+            #[cfg(target_os = "windows")]
+                let pause_key = key_from_code(PAUSE_BIND.unwrap() as u16);
+            #[cfg(target_os = "windows")]
+                let next_transpose_key = key_from_code(NEXT_TRANSPOSE_BIND.unwrap() as u16);
+            #[cfg(target_os = "windows")]
+                let previous_transpose_key = key_from_code(PREVIOUS_TRANSPOSE_BIND.unwrap() as u16);
+
+            #[cfg(target_os = "linux")]
+                let pause_key = key_from_code(PAUSE_BIND.unwrap() as u32);
+            #[cfg(target_os = "linux")]
+                let next_transpose_key = key_from_code(NEXT_TRANSPOSE_BIND.unwrap() as u32);
+            #[cfg(target_os = "linux")]
+                let previous_transpose_key = key_from_code(PREVIOUS_TRANSPOSE_BIND.unwrap() as u32);
+
+            // no clue if this will compile on mac
+            #[cfg(target_os = "macos")]
+                let pause_key = key_from_code(PAUSE_BIND.unwrap() as u16);
+            #[cfg(target_os = "macos")]
+                let next_transpose_key = key_from_code(NEXT_TRANSPOSE_BIND.unwrap() as u16);
+            #[cfg(target_os = "macos")]
+                let previous_transpose_key = key_from_code(PREVIOUS_TRANSPOSE_BIND.unwrap() as u16);
+
+
+            if !PAUSE_BIND.is_none() && key == pause_key {
+                insert_key_is_held_value(pause_key, false);
+            }
+            else if !NEXT_TRANSPOSE_BIND.is_none() && key == next_transpose_key {
+                insert_key_is_held_value(next_transpose_key, false);
+            }
+            else if !PREVIOUS_TRANSPOSE_BIND.is_none() && key == previous_transpose_key {
+                insert_key_is_held_value(previous_transpose_key, false);
             }
         },
         _ => (),
