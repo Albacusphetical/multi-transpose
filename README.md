@@ -15,5 +15,5 @@ Compatible with websites and games that allow you to transpose with your keyboar
 
 Download the installer (.exe) for the latest release for your platform. 
 
-Open and run the installer, it may say the app is unsafe, however nothing is wrong with this, this is becuase it presses the transpose up/down keys for you as an example, you can verify this for yourself in the code above.
+Open and run the installer, it may say the app is unsafe, however nothing is wrong with this, this is because it presses the transpose up/down keys for you as an example, you can verify this for yourself in the code above.
 
