@@ -7,7 +7,14 @@ import {Button, Card, EditableText, InputGroup, OverlayToaster, Tab, Tabs, Toolt
 import KeyBindManager from "./components/KeyBindManager.jsx";
 import {useDatabase} from "./components/DatabaseProvider.jsx";
 import TransposeMatrix from "./components/TransposeMatrix.jsx";
-import {generalAppToastConfig, modOrDefault, overlayToasterDefaultProps, spawnWindow, toastOnPause} from "./utils.js";
+import {
+  generalAppToastConfig,
+  modOrDefault,
+  onLinkClick,
+  overlayToasterDefaultProps,
+  spawnWindow,
+  toastOnPause
+} from "./utils.js";
 
 export const appToaster = OverlayToaster.createAsync(overlayToasterDefaultProps);
 
@@ -223,7 +230,15 @@ function App() {
           </Button>
         </Tooltip>
 
-        <TransposeMatrix index={selectedIndex} transposes={transposes}/>
+        <span className={"guide"}>
+          <a
+             className={"guide-link"}
+             onClick={() => {onLinkClick("Tutorial", "https://github.com/Albacusphetical/multi-transpose/wiki/Usage-Guide")}}
+          >
+            Tutorial
+          </a>
+          <TransposeMatrix index={selectedIndex} transposes={transposes}/>
+        </span>
 
         <span className={"version"}>
           <span>Version {pkg.version}</span>

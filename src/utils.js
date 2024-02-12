@@ -47,6 +47,10 @@ export function spawnWindow(label, options) {
     })
 }
 
+export const onLinkClick = (label, url) => {
+    spawnWindow(label, {url: url, title: label});
+}
+
 export function modOrDefault(num, divisor) {
     const result = num % divisor;
     return isNaN(result) ? 0 : result;

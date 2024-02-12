@@ -25,12 +25,21 @@
     margin-right: 5px;
 }
 
+.guide {
+    margin-top: 25px;
+    width: min-content;
+}
+
+.guide-link {
+    float: left;
+    margin-left: 8px;
+}
+
 .transpose-matrix-container {
     display: flex;
     justify-content: flex-start;
     flex-wrap: wrap;
     align-items: center;
-    margin-top: 25px;
     margin-bottom: 25px;
     min-width: 80vw;
     max-width: 80vw;
