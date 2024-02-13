@@ -3,6 +3,7 @@
 
 mod event_processing;
 mod keyboard;
+mod audio;
 
 use crate::keyboard::{TRANSPOSE_DOWN_BIND, TRANSPOSE_UP_BIND, send_key};
 

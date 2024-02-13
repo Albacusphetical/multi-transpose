@@ -15,6 +15,7 @@ import {
   spawnWindow,
   toastOnPause
 } from "./utils.js";
+import Mute from "./components/Mute.jsx";
 
 export const appToaster = OverlayToaster.createAsync(overlayToasterDefaultProps);
 
@@ -26,8 +27,8 @@ function App() {
   const [transposes, setTransposes] = useState([]);
   const [canTranspose, setCanTranspose] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
-
   const [transposeMonitorWebview, setTransposeMonitorWebview] = useState(null)
+
   const [eventFromBackend, setEventFromBackend] = useState({}) // for debugging
 
   /** @returns {Promise<WebviewWindow>}*/
@@ -88,7 +89,6 @@ function App() {
 
       return;
     }
-
 
     emit("backend_event", {transposes});
     setTransposes(transposes);
@@ -230,13 +230,18 @@ function App() {
           </Button>
         </Tooltip>
 
-        <span className={"guide"}>
-          <a
-             className={"guide-link"}
-             onClick={() => {onLinkClick("Tutorial", "https://github.com/Albacusphetical/multi-transpose/wiki/Usage-Guide")}}
-          >
-            Tutorial
-          </a>
+        <span className={"transposes-header"}>
+          <div className={"transpose-helper-items"}>
+            <a
+              className={"guide-link"}
+              onClick={() => {onLinkClick("Tutorial", "https://github.com/Albacusphetical/multi-transpose/wiki/Usage-Guide")}}
+            >
+              Tutorial
+            </a>
+
+            <Mute/>
+          </div>
+
           <TransposeMatrix index={selectedIndex} transposes={transposes}/>
         </span>
 

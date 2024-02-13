@@ -4,6 +4,7 @@ use tauri::{AppHandle, Event, Manager};
 use serde_json::{json, Value};
 use serde_json::Value::Object;
 use crate::keyboard::{PAUSE_BIND, TRANSPOSE_DOWN_BIND, previous_transpose_bind_fn, TRANSPOSE_UP_BIND, next_transpose_bind_fn, PREVIOUS_TRANSPOSE_BIND, NEXT_TRANSPOSE_BIND};
+use crate::audio::{MUTED};
 use crate::{PAUSED, SELECTED_INDEX, TRANSPOSES, CURRENT_TRANSPOSE};
 
 #[derive(Clone, serde::Serialize)]
@@ -30,6 +31,9 @@ pub unsafe fn process_event(event: Event, app_handle: AppHandle, last_press: Arc
     else if let Some(pause) = json.get("pause") {
         pause_event(pause, app_handle);
     }
+    else if let Some(muted) = json.get("muted") {
+        muted_event(muted);
+    }
 }
 
 unsafe fn pause_event(pause: &Value, app_handle: AppHandle) {
@@ -39,9 +43,14 @@ unsafe fn pause_event(pause: &Value, app_handle: AppHandle) {
     app_handle.emit_all("frontend_event", Payload { message: json });
 }
 
+unsafe fn muted_event(muted: &Value) {
+    MUTED = muted.as_bool().unwrap();
+}
+
 unsafe fn change_transposes_event(new_transposes: &Value) {
     let mut transposes = TRANSPOSES.lock().unwrap();
     let mut selected_index = SELECTED_INDEX.lock().unwrap();
+
     *selected_index = 0;
     *transposes = serde_json::from_value(new_transposes.clone()).expect("failed to convert 'transposes' field to vector");
 
@@ -62,7 +71,6 @@ unsafe fn select_index_event(new_index: &Value, app_handle: AppHandle) {
 }
 
 unsafe fn set_keybind_event(keybind: &Value, app_handle: AppHandle, last_press: Arc<Mutex<Option<Instant>>>) {
-    let app_handle = Mutex::new(app_handle);
     let keycode = keybind.get("keycode").unwrap().as_u64().unwrap();
     let bind_name = keybind.get("name").unwrap().as_str().unwrap();
 

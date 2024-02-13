@@ -1,9 +1,13 @@
-export const initTables = `
+export const createKeybindConfigTable = `
     CREATE TABLE IF NOT EXISTS KeyBindConfig (
          name TEXT PRIMARY KEY,
          json TEXT,
          isDefault BOOLEAN DEFAULT false
     );
+`
+
+export const initTables = `
+    ${createKeybindConfigTable}
 `
 
 export const getKeybindConfig = (name) => {

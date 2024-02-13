@@ -6,6 +6,7 @@ use rdev::{Event, EventType, simulate, key_from_code, Key};
 use serde_json::json;
 use crate::{CURRENT_TRANSPOSE, SELECTED_INDEX, transpose, transpose_up, transpose_down, PAUSED, TRANSPOSES};
 use crate::event_processing::Payload;
+use crate::audio::{Sound, play_sound};
 use lazy_static::lazy_static;
 
 // keybindings
@@ -51,6 +52,13 @@ unsafe fn check_key_held(key: Key) -> bool {
 pub fn callback(event: Event, app_handle: &AppHandle, last_press: &Arc<Mutex<Option<Instant>>>) {
     match event.event_type {
         EventType::KeyPress(key) => unsafe {
+            if NEXT_TRANSPOSE_BIND.is_none()
+                || PREVIOUS_TRANSPOSE_BIND.is_none()
+                || PAUSE_BIND.is_none()
+            {
+                return;
+            }
+
             #[cfg(target_os = "windows")]
                 let pause_key = key_from_code(PAUSE_BIND.unwrap() as u16);
             #[cfg(target_os = "windows")]
@@ -115,6 +123,13 @@ pub fn callback(event: Event, app_handle: &AppHandle, last_press: &Arc<Mutex<Opt
             }
         },
         EventType::KeyRelease(key) => unsafe {
+            if NEXT_TRANSPOSE_BIND.is_none()
+                || PREVIOUS_TRANSPOSE_BIND.is_none()
+                || PAUSE_BIND.is_none()
+            {
+                return;
+            }
+
             #[cfg(target_os = "windows")]
                 let pause_key = key_from_code(PAUSE_BIND.unwrap() as u16);
             #[cfg(target_os = "windows")]
@@ -195,6 +210,7 @@ pub unsafe fn next_transpose_bind_fn(app_handle: AppHandle, last_press: Arc<Mute
     }
 
     transpose(transposes[next_index]);
+    play_sound(Sound::Next, app_handle.clone());
 
     *last_press = Some(Instant::now());
     *selected_index = next_index;
@@ -223,6 +239,7 @@ pub unsafe fn previous_transpose_bind_fn(app_handle: AppHandle, last_press: Arc<
     }
 
     transpose(transposes[next_index]);
+    play_sound(Sound::Previous, app_handle.clone());
 
     *last_press = Some(Instant::now());
     *selected_index = next_index;

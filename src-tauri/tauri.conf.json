@@ -7,7 +7,7 @@
   },
   "package": {
     "productName": "multi-transpose",
-    "version": "1.1.1"
+    "version": "1.2.0"
   },
   "tauri": {
     "updater": {
@@ -29,6 +29,9 @@
       },
       "window": {
         "create": true
+      },
+      "fs": {
+        "scope": ["$RESOURCE/*"]
       }
     },
     "bundle": {
@@ -51,6 +54,9 @@
         "icons/Square284x284Logo.png",
         "icons/Square310x310Logo.png",
         "icons/StoreLogo.png"
+      ],
+      "resources": [
+        "assets/*"
       ]
     },
     "security": {
