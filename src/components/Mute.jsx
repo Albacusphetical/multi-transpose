@@ -1,17 +1,23 @@
 import {Button, Tooltip} from "@blueprintjs/core";
 import {useEffect, useState} from "react";
 import {emit} from "@tauri-apps/api/event";
+import {getAppDataSettings, writeAppDataSettings} from "../utils.js";
 
 const Mute = () => {
     const [muted, setMuted] = useState(false);
 
-    const muteHandler = () => {
+    const muteHandler = async () => {
         setMuted(!muted);
-        localStorage.setItem("muted", !muted)
+        await writeAppDataSettings({muted: !muted});
     }
 
     useEffect(() => {
-        setMuted(Boolean(localStorage.getItem("muted")) || false)
+        const setData = async () => {
+            const settings = await getAppDataSettings()
+            setMuted(settings.muted)
+        }
+
+        setData()
     }, []);
 
     useEffect(() => {

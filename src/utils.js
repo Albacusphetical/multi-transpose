@@ -1,6 +1,9 @@
 import {OverlayToaster} from "@blueprintjs/core";
 import {WebviewWindow} from "@tauri-apps/api/window";
+import {appDataDir} from "@tauri-apps/api/path";
+import {exists, readTextFile, writeTextFile} from "@tauri-apps/api/fs";
 
+const defaultAppDataSettings = {muted: false};
 export const overlayToasterDefaultProps = {position: "top", maxToasts: 1, canEscapeKeyClear: true}
 export const generalAppToastConfig = {isCloseButtonShown: false, icon: 'key'}
 
@@ -49,6 +52,30 @@ export function spawnWindow(label, options) {
 
 export const onLinkClick = (label, url) => {
     spawnWindow(label, {url: url, title: label});
+}
+
+export const getAppDataSettings = async () => {
+    const dataDir = await appDataDir();
+    const settingsPath = `${dataDir}settings.json`
+    const settingsExists = await exists(settingsPath);
+
+    if (!settingsExists) {
+        await writeTextFile(settingsPath, JSON.stringify(defaultAppDataSettings))
+        return defaultAppDataSettings;
+    }
+
+    const contents = await readTextFile(`${dataDir}settings.json`);
+
+    return JSON.parse(contents)
+}
+
+export const writeAppDataSettings = async (jsonObj) => {
+    const dataDir = await appDataDir();
+    const settingsPath = `${dataDir}settings.json`
+
+    const settings = await getAppDataSettings()
+
+    await writeTextFile(settingsPath, JSON.stringify({...settings, ...jsonObj}));
 }
 
 export function modOrDefault(num, divisor) {

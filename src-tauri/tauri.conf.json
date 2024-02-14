@@ -30,8 +30,17 @@
       "window": {
         "create": true
       },
+      "path": {
+        "all": true
+      },
       "fs": {
-        "scope": ["$RESOURCE/*"]
+        "readFile": true,
+        "writeFile": true,
+        "exists": true,
+        "scope": [
+          "$APPDATA/settings.json",
+          "$RESOURCE/*"
+        ]
       }
     },
     "bundle": {
