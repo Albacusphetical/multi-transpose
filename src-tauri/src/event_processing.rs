@@ -4,7 +4,7 @@ use tauri::{AppHandle, Event, Manager};
 use serde_json::{json, Value};
 use serde_json::Value::Object;
 use crate::keyboard::{PAUSE_BIND, TRANSPOSE_DOWN_BIND, previous_transpose_bind_fn, TRANSPOSE_UP_BIND, next_transpose_bind_fn, PREVIOUS_TRANSPOSE_BIND, NEXT_TRANSPOSE_BIND};
-use crate::audio::{MUTED};
+use crate::audio::{MUTED, VOLUME};
 use crate::{PAUSED, SELECTED_INDEX, TRANSPOSES, CURRENT_TRANSPOSE};
 
 #[derive(Clone, serde::Serialize)]
@@ -34,6 +34,9 @@ pub unsafe fn process_event(event: Event, app_handle: AppHandle, last_press: Arc
     else if let Some(muted) = json.get("muted") {
         muted_event(muted);
     }
+    else if let Some(volume) = json.get("volume") {
+        volume_event(volume);
+    }
 }
 
 unsafe fn pause_event(pause: &Value, app_handle: AppHandle) {
@@ -45,6 +48,10 @@ unsafe fn pause_event(pause: &Value, app_handle: AppHandle) {
 
 unsafe fn muted_event(muted: &Value) {
     MUTED = muted.as_bool().unwrap();
+}
+
+unsafe fn volume_event(volume: &Value) {
+    VOLUME = volume.as_f64().unwrap() as f32;
 }
 
 unsafe fn change_transposes_event(new_transposes: &Value) {

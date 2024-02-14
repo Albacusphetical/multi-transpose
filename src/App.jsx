@@ -15,7 +15,7 @@ import {
   spawnWindow,
   toastOnPause
 } from "./utils.js";
-import Mute from "./components/Mute.jsx";
+import Volume from "./components/Volume.jsx";
 
 export const appToaster = OverlayToaster.createAsync(overlayToasterDefaultProps);
 
@@ -239,7 +239,7 @@ function App() {
               Tutorial
             </a>
 
-            <Mute/>
+            <Volume/>
           </div>
 
           <TransposeMatrix index={selectedIndex} transposes={transposes}/>

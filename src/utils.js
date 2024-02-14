@@ -3,7 +3,7 @@ import {WebviewWindow} from "@tauri-apps/api/window";
 import {appDataDir} from "@tauri-apps/api/path";
 import {exists, readTextFile, writeTextFile} from "@tauri-apps/api/fs";
 
-const defaultAppDataSettings = {muted: false};
+export const defaultAppDataSettings = {muted: false, volume: 0.3};
 export const overlayToasterDefaultProps = {position: "top", maxToasts: 1, canEscapeKeyClear: true}
 export const generalAppToastConfig = {isCloseButtonShown: false, icon: 'key'}
 

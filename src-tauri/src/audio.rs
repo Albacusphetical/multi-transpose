@@ -11,7 +11,9 @@ pub enum Sound {
     Next,
     Previous
 }
+
 pub static mut MUTED: bool = false;
+pub static mut VOLUME: f32 = 0.3;
 const AUDIO_DIR: &str = "assets/audio";
 
 // sounds
@@ -51,11 +53,10 @@ pub unsafe fn play_sound(name: Sound, app_handle: AppHandle) {
             duration = duration.unwrap().checked_add(Duration::from_secs(1));
         }
 
-        // reduce volume (the user can lower the volume of the program too if it's still much)
-        let reduced_volume_source = source.amplify(0.3);
+        let volume_source = source.amplify(VOLUME);
 
         // Play the sound directly on the device
-        stream_handle.play_raw(reduced_volume_source.convert_samples());
+        stream_handle.play_raw(volume_source.convert_samples());
 
         std::thread::sleep(Duration::from_secs(duration.unwrap().as_secs()));
     });

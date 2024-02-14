@@ -40,6 +40,16 @@
     padding: 0 15px 5px 5px;
 }
 
+.volume {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    .bp5-slider {
+        min-width: 12vw;
+    }
+}
+
 .guide-link {
     float: left;
     margin-left: 8px;
