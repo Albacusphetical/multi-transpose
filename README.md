@@ -8,7 +8,7 @@ Any-to-any transposition for VP, go from transpose X to Y instantly.
 
 Compatible with websites and games that allow you to transpose with your keyboard.
 
-[![multi-transpose-showcase](https://github.com/Albacusphetical/multi-transpose/assets/137510000/9e9d6a5e-898b-4eab-887b-4be21ffb3c0c)
+[![multi-transpose-showcase](https://github.com/Albacusphetical/multi-transpose/assets/137510000/8f48ab24-efd9-4c3a-994d-73d27a5707a5)
 ](https://github.com/Albacusphetical/multi-transpose/releases/latest)
 
 # How to use it?
