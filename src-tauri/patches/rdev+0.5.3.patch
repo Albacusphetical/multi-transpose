@@ -1,13 +1,13 @@
 diff --git a/src/lib.rs b/src/lib.rs
-index 70b72ef..37f78b2 100644
+index 70b72ef..ee7fb02 100644
 --- a/src/lib.rs
 +++ b/src/lib.rs
-@@ -228,23 +228,45 @@ mod macos;
+@@ -228,23 +228,61 @@ mod macos;
  #[cfg(target_os = "macos")]
  pub use crate::macos::Keyboard;
  #[cfg(target_os = "macos")]
 -use crate::macos::{display_size as _display_size, listen as _listen, simulate as _simulate};
-+use crate::macos::{display_size as _display_size, listen as _listen, simulate as _simulate, key_from_code as _key_from_code};
++use crate::macos::{display_size as _display_size, listen as _listen, simulate as _simulate, key_from_code as _key_from_code, code_from_key as _code_from_key};
 +#[cfg(target_os = "macos")]
 +use core_graphics::event::CGKeyCode;
 +
@@ -18,7 +18,7 @@ index 70b72ef..37f78b2 100644
  pub use crate::linux::Keyboard;
  #[cfg(target_os = "linux")]
 -use crate::linux::{display_size as _display_size, listen as _listen, simulate as _simulate};
-+use crate::linux::{display_size as _display_size, listen as _listen, simulate as _simulate, key_from_code as _key_from_code};
++use crate::linux::{display_size as _display_size, listen as _listen, simulate as _simulate, key_from_code as _key_from_code, code_from_key as _code_from_key};
 +#[cfg(target_os = "linux")]
 +use std::os::raw::c_uint;
  
@@ -28,11 +28,9 @@ index 70b72ef..37f78b2 100644
  pub use crate::windows::Keyboard;
  #[cfg(target_os = "windows")]
 -use crate::windows::{display_size as _display_size, listen as _listen, simulate as _simulate};
-+use crate::windows::{display_size as _display_size, listen as _listen, simulate as _simulate, key_from_code as _key_from_code};
- #[cfg(target_os = "windows")]
--use crate::windows::{key_from_code};
++use crate::windows::{display_size as _display_size, listen as _listen, simulate as _simulate, key_from_code as _key_from_code, code_from_key as _code_from_key};
++#[cfg(target_os = "windows")]
 +use winapi::shared::minwindef::WORD;
-+
 +
 +#[cfg(target_os = "windows")]
 +pub fn key_from_code(code: WORD) -> Key {
@@ -49,44 +47,62 @@ index 70b72ef..37f78b2 100644
 +    _key_from_code(code)
 +}
 +
++
+ #[cfg(target_os = "windows")]
+-use crate::windows::{key_from_code};
++pub fn code_from_key(key: Key) -> Option<WORD> {
++    _code_from_key(key)
++}
++
++#[cfg(target_os = "linux")]
++pub fn code_from_key(key: Key) -> Option<c_uint> {
++    _code_from_key(key)
++}
++
++#[cfg(target_os = "macos")]
++pub fn code_from_key(key: Key) -> Option<CGKeyCode> {
++    _code_from_key(key)
++}
++
++
  /// Listening to global events. Caveat: On MacOS, you require the listen
  /// loop needs to be the primary app (no fork before) and need to have accessibility
  /// settings enabled.
 diff --git a/src/linux/mod.rs b/src/linux/mod.rs
-index bf073fa..7118c38 100644
+index bf073fa..099aa9e 100644
 --- a/src/linux/mod.rs
 +++ b/src/linux/mod.rs
 @@ -11,6 +11,8 @@ mod listen;
  mod simulate;
  
  pub use crate::linux::display::display_size;
-+pub use crate::linux::keycodes::key_from_code;
++pub use crate::linux::keycodes::{key_from_code, code_from_key};
 +
  #[cfg(feature = "unstable_grab")]
  pub use crate::linux::grab::grab;
  pub use crate::linux::keyboard::Keyboard;
 diff --git a/src/macos/mod.rs b/src/macos/mod.rs
-index 43ce23f..d199f4c 100644
+index 43ce23f..0e3d86d 100644
 --- a/src/macos/mod.rs
 +++ b/src/macos/mod.rs
 @@ -8,6 +8,8 @@ mod listen;
  mod simulate;
  
  pub use crate::macos::display::display_size;
-+pub use crate::macos::keycodes::key_from_code;
++pub use crate::macos::keycodes::{key_from_code, code_from_key};
 +
  #[cfg(feature = "unstable_grab")]
  pub use crate::macos::grab::grab;
  pub use crate::macos::keyboard::Keyboard;
 diff --git a/src/windows/mod.rs b/src/windows/mod.rs
-index f85415d..457252d 100644
+index f85415d..8c37618 100644
 --- a/src/windows/mod.rs
 +++ b/src/windows/mod.rs
 @@ -10,9 +10,10 @@ mod listen;
  mod simulate;
  
  pub use crate::windows::display::display_size;
-+pub use crate::windows::keycodes::key_from_code;
++pub use crate::windows::keycodes::{key_from_code, code_from_key};
 +
  #[cfg(feature = "unstable_grab")]
  pub use crate::windows::grab::grab;

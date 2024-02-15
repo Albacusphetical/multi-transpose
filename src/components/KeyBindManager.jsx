@@ -1,5 +1,5 @@
 import KeyBind from "./KeyBind.jsx";
-import {emit} from "@tauri-apps/api/event";
+import {emit, listen, once} from "@tauri-apps/api/event";
 import {useEffect, useState} from "react";
 import {Section, SectionCard} from "@blueprintjs/core";
 import {useDatabase} from "./DatabaseProvider.jsx";
@@ -49,28 +49,40 @@ const KeyBindManager = ({onListen = (isListening) => {}, onKeybindSet = (e) => {
         onListen(true);
         setIsListening(true);
         setWhoIsListening(name);
-        document.addEventListener("keydown", async (e) => {
+
+        // emit key_listen to backend, start listening for a key_consume event, emit the bind as usual
+        emit("backend_event", {key_listen: true})
+        once("key_consume", (event) => {
+            console.log(event)
+
             onListen(false);
             setIsListening(false);
             setWhoIsListening("");
+            emit("backend_event", {key_listen: false})
+        })
 
-            const valid = await validateKeyToUse(e.key);
-            if (!valid) {
-                return;
-            }
-
-            keysInUse.delete(config[name].value?.key);
-            config[name].value = {key: e.key, keyCode: e.keyCode};
-            keysInUse.add(e.key)
-
-            setKeysInUse(new Set(keysInUse));
-
-            // send keycode to backend
-            emit("backend_event", {bind: {name: name, keycode: e.keyCode}});
-
-            // update DB with updated config
-            database.execute(updateKeybindConfig(configName, config, configName === "default"))
-        }, {once: true})
+        // document.addEventListener("keydown", async (e) => {
+        //     onListen(false);
+        //     setIsListening(false);
+        //     setWhoIsListening("");
+        //
+        //     const valid = await validateKeyToUse(e.key);
+        //     if (!valid) {
+        //         return;
+        //     }
+        //
+        //     keysInUse.delete(config[name].value?.key);
+        //     config[name].value = {key: e.key, keyCode: e.keyCode};
+        //     keysInUse.add(e.key)
+        //
+        //     setKeysInUse(new Set(keysInUse));
+        //
+        //     // send keycode to backend
+        //     emit("backend_event", {bind: {name: name, keycode: e.keyCode}});
+        //
+        //     // update DB with updated config
+        //     database.execute(updateKeybindConfig(configName, config, configName === "default"))
+        // }, {once: true})
     }
 
     const validateKeyToUse = async (key) => {

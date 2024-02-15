@@ -3337,7 +3337,7 @@ dependencies = [
 
 [[package]]
 name = "multi-transpose"
-version = "1.2.0"
+version = "1.2.1"
 dependencies = [
  "lazy_static",
  "patch-crate",
@@ -4300,6 +4300,7 @@ dependencies = [
  "core-graphics 0.19.2",
  "lazy_static",
  "libc",
+ "serde",
  "winapi",
  "x11",
 ]
