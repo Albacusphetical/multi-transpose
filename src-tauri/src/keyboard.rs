@@ -61,7 +61,7 @@ pub fn callback(event: Event, app_handle: &AppHandle, last_press: &Arc<Mutex<Opt
                 */
 
                 let keycode = code_from_key(key);
-                let json = serde_json::to_string(&json!({"name": key, "keycode": keycode})).unwrap();
+                let json = serde_json::to_string(&json!({"key": key, "keycode": keycode})).unwrap();
                 app_handle.emit_all("key_consume", Payload { message: json });
 
                 return;

@@ -79,6 +79,7 @@ fn main() {
 
     // gui
     tauri::Builder::default()
+        .device_event_filter(tauri::DeviceEventFilter::Always)
         .plugin(
             tauri_plugin_sql::Builder::default()
                 // idk why these migrations won't run, these tables will just have to be added from the frontend for now I guess
