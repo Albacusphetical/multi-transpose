@@ -18,6 +18,6 @@ export const getKeybindConfig = (name) => {
 
 export const updateKeybindConfig = (name, jsonObj, isDefault = false) => {
     return `
-        INSERT OR REPLACE INTO KeyBindConfig (name, json, isDefault) VALUES ('${name}', '${JSON.stringify(jsonObj)}', ${isDefault});
+        INSERT OR REPLACE INTO KeyBindConfig (name, json, isDefault) VALUES ('${name}', '${JSON.stringify({keys: jsonObj})}', ${isDefault});
     `
 }

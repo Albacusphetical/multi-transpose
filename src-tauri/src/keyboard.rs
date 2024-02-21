@@ -2,12 +2,15 @@ use tauri::{AppHandle, Manager};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
-use rdev::{Event, EventType, simulate, key_from_code, Key};
+use rdev::{Event, EventType, simulate, key_from_code, code_from_key, Key};
 use serde_json::json;
 use crate::{CURRENT_TRANSPOSE, SELECTED_INDEX, transpose, transpose_up, transpose_down, PAUSED, TRANSPOSES};
 use crate::event_processing::Payload;
 use crate::audio::{Sound, play_sound};
 use lazy_static::lazy_static;
+
+// for identifying key pressed before setting keybind, value is controlled by frontend
+pub static mut KEY_LISTEN: bool = false;
 
 // keybindings
 pub static mut PAUSE_BIND: Option<u64> = None;
@@ -52,6 +55,18 @@ unsafe fn check_key_held(key: Key) -> bool {
 pub fn callback(event: Event, app_handle: &AppHandle, last_press: &Arc<Mutex<Option<Instant>>>) {
     match event.event_type {
         EventType::KeyPress(key) => unsafe {
+            if KEY_LISTEN {
+                /* This will prevent any keybinds running in order to identify the key pressed and send the key to the frontend.
+                   Identifying the key was originally done on browser, but not cross-platform friendly.
+                */
+
+                let keycode = code_from_key(key);
+                let json = serde_json::to_string(&json!({"key": key, "keycode": keycode})).unwrap();
+                app_handle.emit_all("key_consume", Payload { message: json });
+
+                return;
+            }
+
             if NEXT_TRANSPOSE_BIND.is_none()
                 || PREVIOUS_TRANSPOSE_BIND.is_none()
                 || PAUSE_BIND.is_none()
@@ -123,6 +138,10 @@ pub fn callback(event: Event, app_handle: &AppHandle, last_press: &Arc<Mutex<Opt
             }
         },
         EventType::KeyRelease(key) => unsafe {
+            if KEY_LISTEN { // see KeyPress above
+                return;
+            }
+
             if NEXT_TRANSPOSE_BIND.is_none()
                 || PREVIOUS_TRANSPOSE_BIND.is_none()
                 || PAUSE_BIND.is_none()

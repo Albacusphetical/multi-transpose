@@ -94,57 +94,6 @@ function App() {
     setTransposes(transposes);
   }
 
-  const appInFocusKeyDownCallback = (e) => {
-    // garbage/unreadable (but quick to use) way of accessing current state within an event listener but idc - for now
-    setKeybindManagerIsListening(listening => {
-      if (listening) {
-        // prevent use of keybinds within the app
-        return listening
-      }
-
-      setKeybindConfig(currentConfig => {
-        // pause/resume while in app
-        if (e.key === currentConfig.config?.pause?.value?.key && currentConfig.canTranspose) {
-          setIsPaused(isPaused => {
-            emit("backend_event", {pause: !isPaused})
-
-            return isPaused
-          })
-        }
-
-        // next transpose
-        else if (e.key === currentConfig.config?.next_transpose?.value?.key) {
-          setSelectedIndex(i => {
-            setTransposes(transposes => {
-              emit("backend_event", {selected_index: modOrDefault(i + 1, transposes.length)})
-
-              return transposes;
-            })
-
-            return i;
-          })
-        }
-
-        // previous transpose
-        else if (e.key === currentConfig.config?.previous_transpose?.value?.key) {
-          setSelectedIndex(i => {
-            setTransposes(transposes => {
-              emit("backend_event", {selected_index: modOrDefault(i + transposes.length - 1, transposes.length)})
-
-              return transposes;
-            })
-
-            return i;
-          })
-        }
-
-        return currentConfig;
-      })
-
-      return listening
-    })
-  }
-
   useEffect(() => {
     const unlisten = listen("frontend_event", (event) => {
       try {
@@ -173,11 +122,8 @@ function App() {
       setEventFromBackend(event)
     })
 
-    document.addEventListener("keydown", appInFocusKeyDownCallback)
-
     return () => {
       unlisten.then((cleanFn) => cleanFn());
-      removeEventListener("keydown", appInFocusKeyDownCallback);
     }
   }, []);
 

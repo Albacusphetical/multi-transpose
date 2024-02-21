@@ -3,7 +3,7 @@ use std::time::{Duration, Instant};
 use tauri::{AppHandle, Event, Manager};
 use serde_json::{json, Value};
 use serde_json::Value::Object;
-use crate::keyboard::{PAUSE_BIND, TRANSPOSE_DOWN_BIND, previous_transpose_bind_fn, TRANSPOSE_UP_BIND, next_transpose_bind_fn, PREVIOUS_TRANSPOSE_BIND, NEXT_TRANSPOSE_BIND};
+use crate::keyboard::{KEY_LISTEN, PAUSE_BIND, TRANSPOSE_DOWN_BIND, previous_transpose_bind_fn, TRANSPOSE_UP_BIND, next_transpose_bind_fn, PREVIOUS_TRANSPOSE_BIND, NEXT_TRANSPOSE_BIND};
 use crate::audio::{MUTED, VOLUME};
 use crate::{PAUSED, SELECTED_INDEX, TRANSPOSES, CURRENT_TRANSPOSE};
 
@@ -24,6 +24,13 @@ pub unsafe fn process_event(event: Event, app_handle: AppHandle, last_press: Arc
     }
     else if let Some(new_index) = json.get("selected_index") {
         select_index_event(new_index, app_handle);
+    }
+    else if let Some(key_listen) = json.get("key_listen") {
+        /* This will prevent any keybinds running in order to identify the key pressed and send the key to the frontend.
+           Identifying the key was originally done on browser, but not cross-platform friendly.
+        */
+
+        key_listen_event(key_listen);
     }
     else if let Some(keybind) = json.get("bind") {
         set_keybind_event(keybind, app_handle, last_press);
@@ -75,6 +82,10 @@ unsafe fn select_index_event(new_index: &Value, app_handle: AppHandle) {
     let json = serde_json::to_string(&json!({"current_index": new_index})).unwrap();
 
     app_handle.emit_all("frontend_event", Payload { message: json });
+}
+
+unsafe fn key_listen_event(key_listen: &Value) {
+    KEY_LISTEN = key_listen.as_bool().unwrap();
 }
 
 unsafe fn set_keybind_event(keybind: &Value, app_handle: AppHandle, last_press: Arc<Mutex<Option<Instant>>>) {

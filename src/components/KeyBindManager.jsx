@@ -1,5 +1,5 @@
 import KeyBind from "./KeyBind.jsx";
-import {emit} from "@tauri-apps/api/event";
+import {emit, listen, once} from "@tauri-apps/api/event";
 import {useEffect, useState} from "react";
 import {Section, SectionCard} from "@blueprintjs/core";
 import {useDatabase} from "./DatabaseProvider.jsx";
@@ -7,25 +7,28 @@ import {getKeybindConfig, updateKeybindConfig} from "../queries.js";
 import {appToaster} from "../App.jsx";
 
 const defaultConfig = {
-    "pause": {
-        "purpose": "Pause All Binds",
-        "value": null
-    },
-    "transpose_up": {
-        "purpose": "Transpose Up",
-        "value": null
-    },
-    "transpose_down": {
-        "purpose": "Transpose Down",
-        "value": null
-    },
-    "next_transpose": {
-        "purpose": "Next Transpose",
-        "value": null
-    },
-    "previous_transpose": {
-        "purpose": "Previous Transpose",
-        "value": null
+    version: 1,
+    keys: {
+        "pause": {
+            "purpose": "Pause All Binds",
+            "value": null
+        },
+        "transpose_up": {
+            "purpose": "Transpose Up",
+            "value": null
+        },
+        "transpose_down": {
+            "purpose": "Transpose Down",
+            "value": null
+        },
+        "next_transpose": {
+            "purpose": "Next Transpose",
+            "value": null
+        },
+        "previous_transpose": {
+            "purpose": "Previous Transpose",
+            "value": null
+        }
     }
 }
 
@@ -34,7 +37,7 @@ const restrictedKeys = new Set("1!2@34$5%6^78*9(0)qwertyuiopQWERTYUIOPasdfghjklA
 
 const KeyBindManager = ({onListen = (isListening) => {}, onKeybindSet = (e) => {}}) => {
     const {database} = useDatabase();
-    const [config, setConfig] = useState(defaultConfig);
+    const [config, setConfig] = useState(defaultConfig.keys);
     const [configName, setConfigName] = useState("default");
     const [hasFetchedDefaultConfig, setHasFetchedDefaultConfig] = useState(false);
     const [isListening, setIsListening] = useState(false);
@@ -49,28 +52,57 @@ const KeyBindManager = ({onListen = (isListening) => {}, onKeybindSet = (e) => {
         onListen(true);
         setIsListening(true);
         setWhoIsListening(name);
-        document.addEventListener("keydown", async (e) => {
+
+        // emit key_listen to backend, start listening for a key_consume event, emit the bind as usual
+        emit("backend_event", {key_listen: true})
+        once("key_consume", async (event) => {
+            emit("backend_event", {key_listen: false})
+
+            const {key, keycode} = JSON.parse(event.payload.message)
             onListen(false);
             setIsListening(false);
             setWhoIsListening("");
 
-            const valid = await validateKeyToUse(e.key);
+            const valid = await validateKeyToUse(key);
             if (!valid) {
                 return;
             }
 
             keysInUse.delete(config[name].value?.key);
-            config[name].value = {key: e.key, keyCode: e.keyCode};
-            keysInUse.add(e.key)
+            config[name].value = {key: key, keyCode: keycode};
+            keysInUse.add(key)
 
             setKeysInUse(new Set(keysInUse));
 
             // send keycode to backend
-            emit("backend_event", {bind: {name: name, keycode: e.keyCode}});
+            emit("backend_event", {bind: {name: name, keycode: keycode}});
 
             // update DB with updated config
             database.execute(updateKeybindConfig(configName, config, configName === "default"))
-        }, {once: true})
+        })
+
+        // document.addEventListener("keydown", async (e) => {
+        //     onListen(false);
+        //     setIsListening(false);
+        //     setWhoIsListening("");
+        //
+        //     const valid = await validateKeyToUse(e.key);
+        //     if (!valid) {
+        //         return;
+        //     }
+        //
+        //     keysInUse.delete(config[name].value?.key);
+        //     config[name].value = {key: e.key, keyCode: e.keyCode};
+        //     keysInUse.add(e.key)
+        //
+        //     setKeysInUse(new Set(keysInUse));
+        //
+        //     // send keycode to backend
+        //     emit("backend_event", {bind: {name: name, keycode: e.keyCode}});
+        //
+        //     // update DB with updated config
+        //     database.execute(updateKeybindConfig(configName, config, configName === "default"))
+        // }, {once: true})
     }
 
     const validateKeyToUse = async (key) => {
@@ -109,7 +141,8 @@ const KeyBindManager = ({onListen = (isListening) => {}, onKeybindSet = (e) => {
 
             if (result.length > 0) {
                 try {
-                    const prevConfig = {...defaultConfig, ...JSON.parse(result[0].json)};
+                    const keys = JSON.parse(result[0].json)?.keys ?? defaultConfig.keys;
+                    const prevConfig = {...defaultConfig.keys, ...keys};
                     setConfig(prevConfig);
 
                     // register keys with backend, and here as in use
@@ -127,7 +160,7 @@ const KeyBindManager = ({onListen = (isListening) => {}, onKeybindSet = (e) => {
                 catch (err) {console.error(err)}
             }
 
-            setIsAbleToTranspose(newKeysInUseSet.size === Object.keys(defaultConfig).length)
+            setIsAbleToTranspose(newKeysInUseSet.size === Object.keys(defaultConfig.keys).length)
         })
         .catch(err => console.error(err))
         .finally(() => {
@@ -137,7 +170,7 @@ const KeyBindManager = ({onListen = (isListening) => {}, onKeybindSet = (e) => {
 
     useEffect(() => {
         if (hasFetchedDefaultConfig) {
-            let canTranspose = keysInUse.size === Object.keys(defaultConfig).length;
+            let canTranspose = keysInUse.size === Object.keys(defaultConfig.keys).length;
 
             setIsAbleToTranspose(canTranspose)
             onKeybindSet({config, canTranspose})
