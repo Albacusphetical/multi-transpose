@@ -79,7 +79,7 @@ jobs:
         working-directory: "./src-tauri"
         run: |
           cargo install patch-crate
-          cargo patch-crate
+          cargo patch-crate --force
 
       - uses: tauri-apps/tauri-action@v0
         env:
