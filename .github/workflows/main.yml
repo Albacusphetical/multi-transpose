@@ -75,12 +75,6 @@ jobs:
       - name: install frontend dependencies
         run: npm install # change this to npm or pnpm depending on which one you use
 
-      - name: apply backend patches
-        working-directory: "./src-tauri"
-        run: |
-          cargo install patch-crate
-          cargo patch-crate --force
-
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }},
