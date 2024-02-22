@@ -35,9 +35,9 @@ Once you have that set up, cd into src/, and run "npm install" in terminal. Do n
 You will need Rust (you may currently need to use the latest nightly version) to be able to run Tauri. 
 See Tauri's prerequisites here: https://tauri.app/v1/guides/getting-started/prerequisites#3-rust
 
-Once you have set up Rust, cd into src-tauri/, and before building, first you must apply any patches available.
-Run "cargo install patch-crate", then once thats installed, run "cargo patch-crate". 
-
-Once you have applied patches, and have nodejs/npm setup, you can run either "npm run tauri dev" for development, or "npm run tauri build" to create a production build.
+Once you have set up Rust and have nodejs/npm setup, cd into src-tauri/, you can run either "npm run tauri dev" for development, or "npm run tauri build" to create a production build.
 
 If you have made it this far without a sweat 🎉congratulations🎉, if not, feel free to let me know if you have trouble setting up otherwise.
+
+This project depends on a fork of [rdev](https://github.com/Narsil/rdev) for keyboard events, check it out here:
+https://github.com/Albacusphetical/rdev
