@@ -80,29 +80,6 @@ const KeyBindManager = ({onListen = (isListening) => {}, onKeybindSet = (e) => {
             // update DB with updated config
             database.execute(updateKeybindConfig(configName, config, configName === "default"))
         })
-
-        // document.addEventListener("keydown", async (e) => {
-        //     onListen(false);
-        //     setIsListening(false);
-        //     setWhoIsListening("");
-        //
-        //     const valid = await validateKeyToUse(e.key);
-        //     if (!valid) {
-        //         return;
-        //     }
-        //
-        //     keysInUse.delete(config[name].value?.key);
-        //     config[name].value = {key: e.key, keyCode: e.keyCode};
-        //     keysInUse.add(e.key)
-        //
-        //     setKeysInUse(new Set(keysInUse));
-        //
-        //     // send keycode to backend
-        //     emit("backend_event", {bind: {name: name, keycode: e.keyCode}});
-        //
-        //     // update DB with updated config
-        //     database.execute(updateKeybindConfig(configName, config, configName === "default"))
-        // }, {once: true})
     }
 
     const validateKeyToUse = async (key) => {
@@ -117,6 +94,14 @@ const KeyBindManager = ({onListen = (isListening) => {}, onKeybindSet = (e) => {
             })
 
             return false;
+        }
+
+
+        if (key.startsWith("Num") || (key.startsWith("Key") && isNaN(key.slice(3)))) {
+            /** for letters, isNaN is checked for Key* since Key* may include an unknown key by keycode */
+
+            // known key: letter or number
+            key = key.slice(3)
         }
 
         if (restrictedKeys.has(key)) {
