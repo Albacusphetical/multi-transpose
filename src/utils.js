@@ -54,6 +54,19 @@ export const onLinkClick = (label, url) => {
     spawnWindow(label, {url: url, title: label});
 }
 
+/** https://github.com/tauri-apps/tauri/discussions/3844 **/
+export const preventRefreshOnKeydownCallback = (event) => {
+    // Prevent F5 or Ctrl+R (Windows/Linux) and Command+R (Mac) from refreshing the page
+    if (event.key === 'F5' || (event.ctrlKey && event.key === 'r') || (event.metaKey && event.key === 'r')) {
+        event.preventDefault();
+    }
+}
+
+export const preventDefaultEventCallback = (event) => {
+    event.preventDefault();
+}
+/****/
+
 export const getAppDataSettings = async () => {
     const dataDir = await appDataDir();
     const settingsPath = `${dataDir}settings.json`

@@ -11,7 +11,7 @@ import {
   generalAppToastConfig,
   modOrDefault,
   onLinkClick,
-  overlayToasterDefaultProps,
+  overlayToasterDefaultProps, preventDefaultEventCallback, preventRefreshOnKeydownCallback,
   spawnWindow,
   toastOnPause
 } from "./utils.js";
@@ -122,8 +122,14 @@ function App() {
       setEventFromBackend(event)
     })
 
+    // prevents window refresh
+    document.addEventListener('keydown', preventRefreshOnKeydownCallback);
+    document.addEventListener('contextmenu', preventDefaultEventCallback);
+
     return () => {
       unlisten.then((cleanFn) => cleanFn());
+      removeEventListener('keydown', preventRefreshOnKeydownCallback);
+      removeEventListener('contextmenu', preventDefaultEventCallback);
     }
   }, []);
 

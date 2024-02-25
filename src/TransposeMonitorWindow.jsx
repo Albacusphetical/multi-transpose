@@ -1,6 +1,11 @@
 import {useEffect, useState} from "react";
 import {emit, listen} from "@tauri-apps/api/event";
-import {overlayToasterDefaultProps, toastOnPause} from "./utils.js";
+import {
+    overlayToasterDefaultProps,
+    preventDefaultEventCallback,
+    preventRefreshOnKeydownCallback,
+    toastOnPause
+} from "./utils.js";
 import {OverlayToaster} from "@blueprintjs/core";
 import TransposeMatrixItem from "./components/TransposeMatrixItem.jsx";
 import BlankTransposeMatrixItem from "./components/BlankTransposeMatrixItem.jsx";
@@ -67,8 +72,14 @@ function TransposeMonitorWindow() {
         // signal this window is ready for data
         emit("transpose_monitor_ready", null);
 
+        // prevents window refresh
+        document.addEventListener('keydown', preventRefreshOnKeydownCallback);
+        document.addEventListener('contextmenu', preventDefaultEventCallback);
+
         return () => {
             unlisten.then((cleanFn) => cleanFn());
+            removeEventListener('keydown', preventRefreshOnKeydownCallback);
+            removeEventListener('contextmenu', preventDefaultEventCallback);
         }
     }, []);
 

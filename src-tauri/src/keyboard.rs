@@ -4,10 +4,18 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use rdev::{Event, EventType, simulate, key_from_code, code_from_key, Key};
 use serde_json::json;
+use serde::{Serialize, Deserialize};
 use crate::{CURRENT_TRANSPOSE, SELECTED_INDEX, transpose, transpose_up, transpose_down, PAUSED, TRANSPOSES};
 use crate::event_processing::Payload;
 use crate::audio::{Sound, play_sound};
 use lazy_static::lazy_static;
+
+#[derive(Serialize, Deserialize)]
+#[serde(untagged)]
+enum KeyRepr {
+    Key(Key),
+    Unknown(String)
+}
 
 // for identifying key pressed before setting keybind, value is controlled by frontend
 pub static mut KEY_LISTEN: bool = false;
@@ -60,8 +68,14 @@ pub fn callback(event: Event, app_handle: &AppHandle, last_press: &Arc<Mutex<Opt
                    Identifying the key was originally done on browser, but not cross-platform friendly.
                 */
 
+                let mut key_repr: KeyRepr = KeyRepr::Key(key);
+
                 let keycode = code_from_key(key);
-                let json = serde_json::to_string(&json!({"key": key, "keycode": keycode})).unwrap();
+                if !keycode.is_none() && key == Key::Unknown(keycode.unwrap() as u32) {
+                    key_repr = KeyRepr::Unknown(format!("Key{:?}", keycode.unwrap()));
+                }
+
+                let json = serde_json::to_string(&json!({"key": key_repr, "keycode": keycode})).unwrap();
                 app_handle.emit_all("key_consume", Payload { message: json });
 
                 return;
