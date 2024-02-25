@@ -1,7 +1,7 @@
 import {useEffect, useState} from "react";
 import {emit, listen} from "@tauri-apps/api/event";
 import {
-    overlayToasterDefaultProps,
+    overlayToasterDefaultProps, preventCaretOnKeydownCallback,
     preventDefaultEventCallback,
     preventRefreshOnKeydownCallback,
     toastOnPause
@@ -76,10 +76,14 @@ function TransposeMonitorWindow() {
         document.addEventListener('keydown', preventRefreshOnKeydownCallback);
         document.addEventListener('contextmenu', preventDefaultEventCallback);
 
+        // prevents caret
+        document.addEventListener('keydown', preventCaretOnKeydownCallback);
+
         return () => {
             unlisten.then((cleanFn) => cleanFn());
             removeEventListener('keydown', preventRefreshOnKeydownCallback);
             removeEventListener('contextmenu', preventDefaultEventCallback);
+            removeEventListener('keydown', preventCaretOnKeydownCallback);
         }
     }, []);
 

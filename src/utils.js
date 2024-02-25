@@ -62,6 +62,12 @@ export const preventRefreshOnKeydownCallback = (event) => {
     }
 }
 
+export const preventCaretOnKeydownCallback = (event) => {
+    if (event.key === "F7") {
+        event.preventDefault();
+    }
+}
+
 export const preventDefaultEventCallback = (event) => {
     event.preventDefault();
 }

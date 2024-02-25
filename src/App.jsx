@@ -11,7 +11,10 @@ import {
   generalAppToastConfig,
   modOrDefault,
   onLinkClick,
-  overlayToasterDefaultProps, preventDefaultEventCallback, preventRefreshOnKeydownCallback,
+  overlayToasterDefaultProps,
+  preventCaretOnKeydownCallback,
+  preventDefaultEventCallback,
+  preventRefreshOnKeydownCallback,
   spawnWindow,
   toastOnPause
 } from "./utils.js";
@@ -126,10 +129,14 @@ function App() {
     document.addEventListener('keydown', preventRefreshOnKeydownCallback);
     document.addEventListener('contextmenu', preventDefaultEventCallback);
 
+    // prevents caret
+    document.addEventListener('keydown', preventCaretOnKeydownCallback);
+
     return () => {
       unlisten.then((cleanFn) => cleanFn());
       removeEventListener('keydown', preventRefreshOnKeydownCallback);
       removeEventListener('contextmenu', preventDefaultEventCallback);
+      removeEventListener('keydown', preventCaretOnKeydownCallback);
     }
   }, []);
 
