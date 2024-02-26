@@ -128,6 +128,12 @@ pub fn callback(event: Event, app_handle: &AppHandle, last_press: &Arc<Mutex<Opt
                 }
 
                 PAUSED = !PAUSED;
+                if PAUSED {
+                    play_sound(Sound::Pause, app_handle.clone());
+                }
+                else {
+                    play_sound(Sound::Resume, app_handle.clone());
+                }
 
                 let json = serde_json::to_string(&json!({"paused": PAUSED})).unwrap();
                 app_handle.emit_all("frontend_event", Payload { message: json });

@@ -9,7 +9,9 @@ use rodio::{Decoder, OutputStream, source::Source};
 #[derive(Debug, Clone, Copy, Eq, Hash, PartialEq)]
 pub enum Sound {
     Next,
-    Previous
+    Previous,
+    Pause,
+    Resume
 }
 
 pub static mut MUTED: bool = false;
@@ -22,6 +24,9 @@ lazy_static! {
         let mut map = HashMap::new();
         map.insert(Sound::Next, "SFX_UI_Button_Organic_Plastic_Thin_Select_1.wav");
         map.insert(Sound::Previous, "SFX_UI_Button_Organic_Plastic_Thin_Negative_Back_2.wav");
+        map.insert(Sound::Pause, "stop.wav");
+        map.insert(Sound::Resume, "resume.wav");
+
         map
     };
 }
