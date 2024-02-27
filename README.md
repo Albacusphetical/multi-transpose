@@ -11,6 +11,8 @@ Compatible with websites and games that allow you to transpose with your keyboar
 [![multi-transpose-showcase](https://github.com/Albacusphetical/multi-transpose/assets/137510000/c77ade69-4302-4233-bdfa-e1e4e3ea0b8c)
 ](https://github.com/Albacusphetical/multi-transpose/releases/latest)
 
+Check out this [converter](https://github.com/ArijanJ/midi-converter) if you want to create multi-transpose sheets and copy and paste in transposes.
+
 # How to use it?
 
 See our [Usage Guide](https://github.com/Albacusphetical/multi-transpose/wiki/Usage-Guide) for an example.
