@@ -21,7 +21,7 @@ See our [Usage Guide](https://github.com/Albacusphetical/multi-transpose/wiki/Us
 
 ### Windows:
 
-[Download](https://github.com/Albacusphetical/multi-transpose/releases/latest) the installer (.exe) for the latest release for your platform. 
+[Download](https://github.com/Albacusphetical/multi-transpose/releases/latest) the installer ([.exe](https://github.com/Albacusphetical/multi-transpose/releases/download/v1.2.5/multi-transpose_1.2.5_x64-setup.exe)) for the latest release. 
 
 Open and run the installer, it may say the app is unsafe, however nothing is wrong with this, this is because it presses the transpose up/down keys for you as an example, you can verify this for yourself in the code above.
 
