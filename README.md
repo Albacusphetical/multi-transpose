@@ -6,7 +6,7 @@
 
 Any-to-any transposition for VP, go from transpose X to Y instantly. 
 
-Compatible with websites and games that allow you to transpose with your keyboard.
+Cross-platform and compatible with websites and games that allow you to transpose with your keyboard.
 
 [![multi-transpose-showcase](https://github.com/Albacusphetical/multi-transpose/assets/137510000/c77ade69-4302-4233-bdfa-e1e4e3ea0b8c)
 ](https://github.com/Albacusphetical/multi-transpose/releases/latest)
