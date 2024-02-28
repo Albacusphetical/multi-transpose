@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 
+import "core-js";
 import "normalize.css";
 import "@blueprintjs/core/lib/css/blueprint.css";
 // include blueprint-icons.css for icon font support

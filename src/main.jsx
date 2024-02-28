@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 
+import "core-js";
 import "normalize.css";
 import "@blueprintjs/core/lib/css/blueprint.css";
 // include blueprint-icons.css for icon font support
@@ -12,9 +13,9 @@ import {DatabaseProvider} from "./components/DatabaseProvider.jsx";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
     // only enable StrictMode while developing
-// <React.StrictMode>
+//<React.StrictMode>
     <DatabaseProvider>
           <App />
       </DatabaseProvider>
-  // </React.StrictMode>,
+//  </React.StrictMode>,
 );
