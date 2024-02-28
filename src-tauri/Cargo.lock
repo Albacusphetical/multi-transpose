@@ -2124,7 +2124,7 @@ dependencies = [
 
 [[package]]
 name = "multi-transpose"
-version = "1.2.5"
+version = "1.2.6"
 dependencies = [
  "lazy_static",
  "rdev",
