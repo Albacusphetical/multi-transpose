@@ -20,7 +20,7 @@ import {
 } from "./utils.js";
 import Volume from "./components/Volume.jsx";
 
-export const appToaster = OverlayToaster.createAsync({...overlayToasterDefaultProps, usePortal: true});
+export const appToaster = OverlayToaster.createAsync(overlayToasterDefaultProps);
 
 function App() {
   const {isDatabaseReady} = useDatabase();
@@ -127,7 +127,7 @@ function App() {
 
     // prevents window refresh
     document.addEventListener('keydown', preventRefreshOnKeydownCallback);
-    //document.addEventListener('contextmenu', preventDefaultEventCallback);
+    document.addEventListener('contextmenu', preventDefaultEventCallback);
 
     // prevents caret
     document.addEventListener('keydown', preventCaretOnKeydownCallback);
@@ -135,7 +135,7 @@ function App() {
     return () => {
       unlisten.then((cleanFn) => cleanFn());
       removeEventListener('keydown', preventRefreshOnKeydownCallback);
-      //removeEventListener('contextmenu', preventDefaultEventCallback);
+      removeEventListener('contextmenu', preventDefaultEventCallback);
       removeEventListener('keydown', preventCaretOnKeydownCallback);
     }
   }, []);

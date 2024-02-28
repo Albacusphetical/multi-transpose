@@ -74,7 +74,7 @@ function TransposeMonitorWindow() {
 
         // prevents window refresh
         document.addEventListener('keydown', preventRefreshOnKeydownCallback);
-        // document.addEventListener('contextmenu', preventDefaultEventCallback);
+        document.addEventListener('contextmenu', preventDefaultEventCallback);
 
         // prevents caret
         document.addEventListener('keydown', preventCaretOnKeydownCallback);
@@ -82,7 +82,7 @@ function TransposeMonitorWindow() {
         return () => {
             unlisten.then((cleanFn) => cleanFn());
             removeEventListener('keydown', preventRefreshOnKeydownCallback);
-            // removeEventListener('contextmenu', preventDefaultEventCallback);
+            removeEventListener('contextmenu', preventDefaultEventCallback);
             removeEventListener('keydown', preventCaretOnKeydownCallback);
         }
     }, []);
