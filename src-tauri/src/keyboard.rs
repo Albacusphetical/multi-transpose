@@ -89,11 +89,11 @@ pub fn callback(event: Event, app_handle: &AppHandle, last_press: &Arc<Mutex<Opt
             }
 
             #[cfg(target_os = "windows")]
-                let pause_key = key_from_code(PAUSE_BIND.unwrap() as u16);
+                let pause_key = key_from_code(PAUSE_BIND.unwrap() as u32);
             #[cfg(target_os = "windows")]
-                let next_transpose_key = key_from_code(NEXT_TRANSPOSE_BIND.unwrap() as u16);
+                let next_transpose_key = key_from_code(NEXT_TRANSPOSE_BIND.unwrap() as u32);
             #[cfg(target_os = "windows")]
-                let previous_transpose_key = key_from_code(PREVIOUS_TRANSPOSE_BIND.unwrap() as u16);
+                let previous_transpose_key = key_from_code(PREVIOUS_TRANSPOSE_BIND.unwrap() as u32);
 
             #[cfg(target_os = "linux")]
                 let pause_key = key_from_code(PAUSE_BIND.unwrap() as u32);
@@ -170,11 +170,11 @@ pub fn callback(event: Event, app_handle: &AppHandle, last_press: &Arc<Mutex<Opt
             }
 
             #[cfg(target_os = "windows")]
-                let pause_key = key_from_code(PAUSE_BIND.unwrap() as u16);
+                let pause_key = key_from_code(PAUSE_BIND.unwrap() as u32);
             #[cfg(target_os = "windows")]
-                let next_transpose_key = key_from_code(NEXT_TRANSPOSE_BIND.unwrap() as u16);
+                let next_transpose_key = key_from_code(NEXT_TRANSPOSE_BIND.unwrap() as u32);
             #[cfg(target_os = "windows")]
-                let previous_transpose_key = key_from_code(PREVIOUS_TRANSPOSE_BIND.unwrap() as u16);
+                let previous_transpose_key = key_from_code(PREVIOUS_TRANSPOSE_BIND.unwrap() as u32);
 
             #[cfg(target_os = "linux")]
                 let pause_key = key_from_code(PAUSE_BIND.unwrap() as u32);
@@ -208,7 +208,7 @@ pub fn callback(event: Event, app_handle: &AppHandle, last_press: &Arc<Mutex<Opt
 
 pub unsafe fn send_key(code: u64) {
     #[cfg(target_os = "windows")]
-        let code = code as u16;
+        let code = code as u32;
     #[cfg(target_os = "macos")] // unsure if this will compile
         let code = code as u16;
     #[cfg(target_os = "linux")]
