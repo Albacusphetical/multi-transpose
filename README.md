@@ -46,7 +46,7 @@ Once you have downloaded the .AppImage file, go to the file, right-click and go 
 
 [Download](https://github.com/Albacusphetical/multi-transpose/releases/latest) the installer ([.dmg](https://github.com/Albacusphetical/multi-transpose/releases/download/v1.2.6/multi-transpose_1.2.6_x64.dmg)) for the latest release.
 
-Open the .dmg file first, if you something like the following:
+Open the .dmg file first, if you see something like the following:
 
 ![image](https://github.com/Albacusphetical/multi-transpose/assets/137510000/987e54dc-6499-4256-adba-fcc20d0a264c)
 
@@ -57,7 +57,7 @@ Next, within the .dmg, move multi-transpose to Applications, this is important f
 
 ![image](https://github.com/Albacusphetical/multi-transpose/assets/137510000/0ce230d0-d1bb-4286-8f0b-0faf67018c7a)
 
-Now, you need to give the app or whatever you run multi-transpose, permissions in Accessibility and Input Monitoring.
+Now, you need to give the app or whatever you run for multi-transpose, permissions in Accessibility and Input Monitoring.
 This can be done by going to Security and Preferences > Security and Privacy > Privacy and do the following:
 
 Make sure to select multi-transpose from your Applications folder!
@@ -74,7 +74,7 @@ Now start multi-transpose from Applications, it will start, otherwise, if you se
 
 **MacOS:** 
 - Some buttons/icons are visually glitched but still function.
-- Monitor height for transposes is initially squished but can still be resized.
+- Monitor window height for transposes is initially squished but can still be resized.
 
 # Project setup
 
@@ -87,7 +87,7 @@ See Tauri's prerequisites here: https://tauri.app/v1/guides/getting-started/prer
 
 Once you have set up Rust and have nodejs/npm setup, cd into src-tauri/, you can run either "npm run tauri dev" for development, or "npm run tauri build" to create a production build.
 
-If you are on developing on MacOS, you will need to give the process running the app, security permissions for Accessibility and Input Monitoring, for example, if you are running the app via MacOS Terminal. 
+If you are on developing on MacOS, you will need to give the process running the app, security permissions for Accessibility and Input Monitoring, for example, if you are running the app via MacOS Terminal.
 
 If you have made it this far without a sweat 🎉congratulations🎉, if not, feel free to let me know if you have trouble setting up otherwise.
 
