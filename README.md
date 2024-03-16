@@ -10,7 +10,7 @@ Cross-platform and compatible with websites and games that allow you to transpos
 
 [Install](https://github.com/Albacusphetical/multi-transpose/tree/main?tab=readme-ov-file#installation)
 
-[![multi-transpose-showcase](https://github.com/Albacusphetical/multi-transpose/assets/137510000/c77ade69-4302-4233-bdfa-e1e4e3ea0b8c)
+[![multi-transpose-showcase](https://github.com/Albacusphetical/multi-transpose/assets/137510000/603c3c3e-edb0-4719-8a17-b22e09043d4b)
 ](https://github.com/Albacusphetical/multi-transpose/releases/latest)
 
 Check out this [converter](https://github.com/ArijanJ/midi-converter) if you want to create multi-transpose sheets and copy and paste in transposes.
