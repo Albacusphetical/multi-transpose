@@ -4,6 +4,7 @@ use std::fs::File;
 use std::io::BufReader;
 use std::time::Duration;
 use lazy_static::lazy_static;
+use log::error;
 use rodio::{Decoder, OutputStream, source::Source};
 
 #[derive(Debug, Clone, Copy, Eq, Hash, PartialEq)]
@@ -40,7 +41,7 @@ pub unsafe fn play_sound(name: Sound, app_handle: AppHandle) {
         let mut source = match load_sound(name, app_handle) {
             Some(source) => source,
             None => {
-                println!("Sound ({:?}) not found.", name);
+                error!("Sound ({:?}) not found.", name);
                 return;
             },
         };

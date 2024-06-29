@@ -1,5 +1,6 @@
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
+use log::info;
 use tauri::{AppHandle, Event, Manager};
 use serde_json::{json, Value};
 use serde_json::Value::Object;
@@ -15,7 +16,7 @@ pub struct Payload {
 pub unsafe fn process_event(event: Event, app_handle: AppHandle, last_press: Arc<Mutex<Option<Instant>>>) {
     let json: Value = serde_json::from_str(event.payload().unwrap()).expect("failed to parse json");
 
-    // println!("EVENT FROM FRONTEND: {:?}", json);
+    info!("EVENT FROM FRONTEND: {:?}", json);
     if let Some(new_transposes) = json.get("transposes") {
         change_transposes_event(new_transposes);
 

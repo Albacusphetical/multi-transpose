@@ -9,8 +9,10 @@ use crate::keyboard::{TRANSPOSE_DOWN_BIND, TRANSPOSE_UP_BIND, send_key};
 
 use tauri::Manager;
 use tauri_plugin_sql::{Builder, Migration, MigrationKind};
+use tauri_plugin_log::{LogTarget};
+use log::{error, info};
 use std::sync::{Arc, Mutex};
-use std::thread;
+use std::{panic, thread};
 use std::time::{Instant};
 use lazy_static::lazy_static;
 use rdev::listen;
@@ -38,6 +40,7 @@ unsafe fn transpose(transpose: i32) {
         return;
     }
 
+    info!("Beginning transposing...");
     let is_transposing_up = CURRENT_TRANSPOSE < transpose;
     let transpose_amount: i32 = calculate_next_transpose_difference(transpose);
     for _ in 0..transpose_amount {
@@ -54,6 +57,7 @@ unsafe fn transpose(transpose: i32) {
             transpose_down()
         }
     }
+    info!("Finished transposing!");
 
     CURRENT_TRANSPOSE = transpose;
 }
@@ -77,6 +81,27 @@ fn main() {
         }
     ];
 
+    // Set a custom panic hook to log panics
+    panic::set_hook(Box::new(|panic_info| {
+        // Extract panic message and location
+        let message = if let Some(s) = panic_info.payload().downcast_ref::<&str>() {
+            s.to_string()
+        } else if let Some(s) = panic_info.payload().downcast_ref::<String>() {
+            s.clone()
+        } else {
+            "Unknown panic".to_string()
+        };
+
+        let location = if let Some(location) = panic_info.location() {
+            format!("{}:{}", location.file(), location.line())
+        } else {
+            "Unknown location".to_string()
+        };
+
+        // Log the panic message
+        error!("Thread panicked at {}: {}", location, message);
+    }));
+
     // gui
     tauri::Builder::default()
         .device_event_filter(tauri::DeviceEventFilter::Always)
@@ -86,6 +111,10 @@ fn main() {
                 // .add_migrations("sqlite:multi_transpose.db", db_migrations)
                 .build(),
         )
+        .plugin(tauri_plugin_log::Builder::default().targets([
+            LogTarget::LogDir,
+            LogTarget::Stdout,
+        ]).build())
         .on_window_event(|event| match event.event() {
             tauri::WindowEvent::CloseRequested { api, .. } => {
                 if event.window().label() == "main" {
@@ -122,7 +151,7 @@ fn main() {
                 move || {
                     let app_handle = app_handle.lock().unwrap().clone();
                     if let Err(error) = listen(move |event| keyboard::callback(event, &app_handle, &last_press)) {
-                        println!("Error: {:?}", error);
+                        error!("Error: {:?}", error);
                     }
                 }
             });

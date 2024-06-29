@@ -9,6 +9,7 @@ use crate::{CURRENT_TRANSPOSE, SELECTED_INDEX, transpose, transpose_up, transpos
 use crate::event_processing::Payload;
 use crate::audio::{Sound, play_sound};
 use lazy_static::lazy_static;
+use log::{info, error};
 
 #[derive(Serialize, Deserialize)]
 #[serde(untagged)]
@@ -102,7 +103,6 @@ pub fn callback(event: Event, app_handle: &AppHandle, last_press: &Arc<Mutex<Opt
             #[cfg(target_os = "linux")]
                 let previous_transpose_key = key_from_code(PREVIOUS_TRANSPOSE_BIND.unwrap() as u32);
 
-            // no clue if this will compile on mac
             #[cfg(target_os = "macos")]
                 let pause_key = key_from_code(PAUSE_BIND.unwrap() as u16);
             #[cfg(target_os = "macos")]
@@ -183,7 +183,6 @@ pub fn callback(event: Event, app_handle: &AppHandle, last_press: &Arc<Mutex<Opt
             #[cfg(target_os = "linux")]
                 let previous_transpose_key = key_from_code(PREVIOUS_TRANSPOSE_BIND.unwrap() as u32);
 
-            // no clue if this will compile on mac
             #[cfg(target_os = "macos")]
                 let pause_key = key_from_code(PAUSE_BIND.unwrap() as u16);
             #[cfg(target_os = "macos")]
@@ -209,7 +208,7 @@ pub fn callback(event: Event, app_handle: &AppHandle, last_press: &Arc<Mutex<Opt
 pub unsafe fn send_key(code: u64) {
     #[cfg(target_os = "windows")]
         let code = code as u32;
-    #[cfg(target_os = "macos")] // unsure if this will compile
+    #[cfg(target_os = "macos")]
         let code = code as u16;
     #[cfg(target_os = "linux")]
         let code = code as u32;
@@ -217,14 +216,14 @@ pub unsafe fn send_key(code: u64) {
     match simulate(&EventType::KeyPress(key_from_code(code))) {
         Ok(()) => (),
         Err(SimulateError) => {
-            println!("Failed to send KeyPress event for key: {:?}", SimulateError);
+            error!("Failed to send KeyPress event for key: {:?}", SimulateError);
         }
     }
 
     match simulate(&EventType::KeyRelease(key_from_code(code))) {
         Ok(()) => (),
         Err(SimulateError) => {
-            println!("Failed to send KeyPress event for key: {:?}", SimulateError);
+            error!("Failed to send KeyPress event for key: {:?}", SimulateError);
         }
     }
 }

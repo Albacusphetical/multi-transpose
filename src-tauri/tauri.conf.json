@@ -7,7 +7,21 @@
   },
   "package": {
     "productName": "multi-transpose",
-    "version": "1.2.6"
+    "version": "1.2.7"
+  },
+  "plugins": {
+    "log": {
+      "level": "trace",
+      "targets": ["logDir", "stdout"],
+      "file": {
+        "path": "multi-transpose.log",
+        "level": "trace",
+        "rotation": {
+          "max_file_size": 10485760,
+          "max_files": 5
+        }
+      }
+    }
   },
   "tauri": {
     "updater": {

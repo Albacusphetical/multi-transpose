@@ -1,7 +1,7 @@
 [package]
 name = "multi-transpose"
 description = "multi-transpose"
-version = "1.2.6"
+version = "1.2.7"
 authors = ["Albacusphetical"]
 license = "MIT"
 repository = "https://github.com/Albacusphetical/multi-transpose"
@@ -12,6 +12,8 @@ edition = "2021"
 [dependencies]
 tauri = { version = "1.5", features = [ "fs-exists", "path-all", "fs-write-file", "fs-read-file", "updater", "window-create", "shell-open"] }
 tauri-plugin-sql = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1", features = ["sqlite"] }
+tauri-plugin-log = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
+log = "^0.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 lazy_static = { version = "1.4.0", features = [] }
