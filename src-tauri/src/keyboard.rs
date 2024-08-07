@@ -3,9 +3,9 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use rdev::{Event, EventType, simulate, key_from_code, code_from_key, Key};
-use serde_json::json;
+use serde_json::{json, Value};
 use serde::{Serialize, Deserialize};
-use crate::{CURRENT_TRANSPOSE, SELECTED_INDEX, transpose, transpose_up, transpose_down, PAUSED, TRANSPOSES};
+use crate::{CURRENT_TRANSPOSE, SELECTED_INDEX, transpose, transpose_up, transpose_down, PAUSED, TRANSPOSES, SCROLL_VALUE};
 use crate::event_processing::Payload;
 use crate::audio::{Sound, play_sound};
 use lazy_static::lazy_static;
@@ -27,6 +27,7 @@ pub static mut TRANSPOSE_UP_BIND: Option<u64> = None;
 pub static mut TRANSPOSE_DOWN_BIND: Option<u64> = None;
 pub static mut NEXT_TRANSPOSE_BIND: Option<u64> = None;
 pub static mut PREVIOUS_TRANSPOSE_BIND: Option<u64> = None;
+pub static mut SCROLL_DOWN_BIND: Option<u64> = None;
 
 // safety for held keys, a keybind action should be only executed on the first keypress
 lazy_static! {
@@ -95,6 +96,8 @@ pub fn callback(event: Event, app_handle: &AppHandle, last_press: &Arc<Mutex<Opt
                 let next_transpose_key = key_from_code(NEXT_TRANSPOSE_BIND.unwrap() as u32);
             #[cfg(target_os = "windows")]
                 let previous_transpose_key = key_from_code(PREVIOUS_TRANSPOSE_BIND.unwrap() as u32);
+            #[cfg(target_os = "windows")]
+                let scroll_down_key = key_from_code(SCROLL_DOWN_BIND.unwrap() as u32);
 
             #[cfg(target_os = "linux")]
                 let pause_key = key_from_code(PAUSE_BIND.unwrap() as u32);
@@ -102,6 +105,8 @@ pub fn callback(event: Event, app_handle: &AppHandle, last_press: &Arc<Mutex<Opt
                 let next_transpose_key = key_from_code(NEXT_TRANSPOSE_BIND.unwrap() as u32);
             #[cfg(target_os = "linux")]
                 let previous_transpose_key = key_from_code(PREVIOUS_TRANSPOSE_BIND.unwrap() as u32);
+            #[cfg(target_os = "linux")]
+                let scroll_down_key = key_from_code(SCROLL_DOWN_BIND.unwrap() as u32);
 
             #[cfg(target_os = "macos")]
                 let pause_key = key_from_code(PAUSE_BIND.unwrap() as u16);
@@ -109,7 +114,12 @@ pub fn callback(event: Event, app_handle: &AppHandle, last_press: &Arc<Mutex<Opt
                 let next_transpose_key = key_from_code(NEXT_TRANSPOSE_BIND.unwrap() as u16);
             #[cfg(target_os = "macos")]
                 let previous_transpose_key = key_from_code(PREVIOUS_TRANSPOSE_BIND.unwrap() as u16);
+            #[cfg(target_os = "macos")]
+                let scroll_down_key = key_from_code(SCROLL_DOWN_BIND.unwrap() as u32);
 
+            if !SCROLL_DOWN_BIND.is_none() && key == scroll_down_key {
+                scroll_bind_event();
+            }
 
             if !PAUSE_BIND.is_none() && key == pause_key {
                 if check_key_held(pause_key) {
@@ -284,4 +294,20 @@ pub unsafe fn previous_transpose_bind_fn(app_handle: AppHandle, last_press: Arc<
 
     let json = serde_json::to_string(&json!({"current_index": next_index})).unwrap();
     app_handle.emit_all("frontend_event", Payload { message: json }).unwrap();
+}
+
+unsafe fn scroll_bind_event() {
+    if PAUSED {
+        return;
+    }
+
+    match simulate(&EventType::Wheel {
+        delta_x: 0,
+        delta_y: -SCROLL_VALUE,
+    }) {
+        Ok(()) => (),
+        Err(SimulateError) => {
+            println!("We could not send scroll event");
+        }
+    }
 }
