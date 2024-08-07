@@ -21,6 +21,7 @@ use rdev::listen;
 
 static mut PAUSED: bool = true;
 static mut CURRENT_TRANSPOSE: i32 = 0;
+static mut SCROLL_VALUE: i64 = 0;
 
 lazy_static! {
     static ref TRANSPOSES: Mutex<Vec<i32>> = Mutex::new(vec![0]);

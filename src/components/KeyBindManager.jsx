@@ -7,27 +7,37 @@ import {getKeybindConfig, updateKeybindConfig} from "../queries.js";
 import {appToaster} from "../App.jsx";
 
 const defaultConfig = {
-    version: 1,
+    version: 2,
     keys: {
         "pause": {
             "purpose": "Pause All Binds",
-            "value": null
+            "value": null,
+            "required": true
         },
         "transpose_up": {
             "purpose": "Transpose Up",
-            "value": null
+            "value": null,
+            "required": true
         },
         "transpose_down": {
             "purpose": "Transpose Down",
-            "value": null
+            "value": null,
+            "required": true
         },
         "next_transpose": {
             "purpose": "Next Transpose",
-            "value": null
+            "value": null,
+            "required": true
         },
         "previous_transpose": {
             "purpose": "Previous Transpose",
-            "value": null
+            "value": null,
+            "required": true
+        },
+        "scroll_down": {
+            "purpose": "Scroll",
+            "value": null,
+            "required": false
         }
     }
 }
@@ -144,8 +154,6 @@ const KeyBindManager = ({onListen = (isListening) => {}, onKeybindSet = (e) => {
                 }
                 catch (err) {console.error(err)}
             }
-
-            setIsAbleToTranspose(newKeysInUseSet.size === Object.keys(defaultConfig.keys).length)
         })
         .catch(err => console.error(err))
         .finally(() => {
@@ -155,8 +163,7 @@ const KeyBindManager = ({onListen = (isListening) => {}, onKeybindSet = (e) => {
 
     useEffect(() => {
         if (hasFetchedDefaultConfig) {
-            let canTranspose = keysInUse.size === Object.keys(defaultConfig.keys).length;
-
+            let canTranspose = Object.values(config).every(key => !key.required || key.value !== null);
             setIsAbleToTranspose(canTranspose)
             onKeybindSet({config, canTranspose})
         }
@@ -174,6 +181,8 @@ const KeyBindManager = ({onListen = (isListening) => {}, onKeybindSet = (e) => {
             <SectionCard>
                 <span className={"keybind-manager-content"}>
                     {Object.entries(config).map(([name, data]) => (
+                        ((data?.required === undefined || data.required === true) || (data.required === false && isAbleToTranspose))
+                        &&
                         <KeyBind
                             value={data.value}
                             key={name}

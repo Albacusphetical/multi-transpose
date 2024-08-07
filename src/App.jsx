@@ -3,7 +3,17 @@ import "./App.css";
 import {WebviewWindow} from "@tauri-apps/api/window";
 import {useContext, useEffect, useState} from "react";
 import {listen, emit, TauriEvent} from "@tauri-apps/api/event";
-import {Button, Card, EditableText, InputGroup, OverlayToaster, Tab, Tabs, Tooltip} from "@blueprintjs/core";
+import {
+  Button,
+  Card,
+  EditableText,
+  InputGroup,
+  NumericInput,
+  OverlayToaster,
+  Tab,
+  Tabs,
+  Tooltip
+} from "@blueprintjs/core";
 import KeyBindManager from "./components/KeyBindManager.jsx";
 import {useDatabase} from "./components/DatabaseProvider.jsx";
 import TransposeMatrix from "./components/TransposeMatrix.jsx";
@@ -198,7 +208,29 @@ function App() {
               Tutorial
             </a>
 
-            <Volume/>
+            <div style={{display: "flex"}}>
+              <Tooltip
+                  content={
+                    !canTranspose
+                      ?
+                      "Set your main keybinds before use!"
+                      :
+                      keybindConfig.config?.scroll_down?.value == null ? `Set "Scroll" in the Keybinds menu to use!` : ""
+                  }
+              >
+                <NumericInput
+                    disabled={keybindConfig.config?.scroll_down?.value == null}
+                    inputClassName={"scroll-amount"}
+                    buttonPosition={"left"}
+                    placeholder={"Scroll"}
+                    onValueChange={(valAsNum, valAsString, el) => emit("backend_event", {scroll_value: ~~valAsNum})}
+                    min={0}
+                    max={10}
+                />
+              </Tooltip>
+
+              <Volume/>
+            </div>
           </div>
 
           <TransposeMatrix index={selectedIndex} transposes={transposes}/>

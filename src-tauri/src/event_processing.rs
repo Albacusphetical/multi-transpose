@@ -4,9 +4,10 @@ use log::info;
 use tauri::{AppHandle, Event, Manager};
 use serde_json::{json, Value};
 use serde_json::Value::Object;
-use crate::keyboard::{KEY_LISTEN, PAUSE_BIND, TRANSPOSE_DOWN_BIND, previous_transpose_bind_fn, TRANSPOSE_UP_BIND, next_transpose_bind_fn, PREVIOUS_TRANSPOSE_BIND, NEXT_TRANSPOSE_BIND};
+use crate::keyboard::{KEY_LISTEN, PAUSE_BIND, TRANSPOSE_DOWN_BIND, previous_transpose_bind_fn, TRANSPOSE_UP_BIND, next_transpose_bind_fn, PREVIOUS_TRANSPOSE_BIND, NEXT_TRANSPOSE_BIND, SCROLL_DOWN_BIND};
 use crate::audio::{MUTED, VOLUME};
-use crate::{PAUSED, SELECTED_INDEX, TRANSPOSES, CURRENT_TRANSPOSE};
+use crate::{PAUSED, SELECTED_INDEX, TRANSPOSES, CURRENT_TRANSPOSE, SCROLL_VALUE};
+use rdev::{simulate, EventType};
 
 #[derive(Clone, serde::Serialize)]
 pub struct Payload {
@@ -45,6 +46,9 @@ pub unsafe fn process_event(event: Event, app_handle: AppHandle, last_press: Arc
     else if let Some(volume) = json.get("volume") {
         volume_event(volume);
     }
+    else if let Some(scroll_value) = json.get("scroll_value") {
+        scroll_value_event(scroll_value);
+    }
 }
 
 unsafe fn pause_event(pause: &Value, app_handle: AppHandle) {
@@ -60,6 +64,10 @@ unsafe fn muted_event(muted: &Value) {
 
 unsafe fn volume_event(volume: &Value) {
     VOLUME = volume.as_f64().unwrap() as f32;
+}
+
+unsafe fn scroll_value_event(scroll_value: &Value) {
+    SCROLL_VALUE = scroll_value.as_i64().unwrap();
 }
 
 unsafe fn change_transposes_event(new_transposes: &Value) {
@@ -99,6 +107,7 @@ unsafe fn set_keybind_event(keybind: &Value, app_handle: AppHandle, last_press: 
         "transpose_down" => TRANSPOSE_DOWN_BIND = Some(keycode),
         "next_transpose" => NEXT_TRANSPOSE_BIND = Some(keycode),
         "previous_transpose" => PREVIOUS_TRANSPOSE_BIND = Some(keycode),
+        "scroll_down" => SCROLL_DOWN_BIND = Some(keycode),
         _ => {}
     }
 }
