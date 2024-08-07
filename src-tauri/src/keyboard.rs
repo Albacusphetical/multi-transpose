@@ -115,7 +115,7 @@ pub fn callback(event: Event, app_handle: &AppHandle, last_press: &Arc<Mutex<Opt
             #[cfg(target_os = "macos")]
                 let previous_transpose_key = key_from_code(PREVIOUS_TRANSPOSE_BIND.unwrap() as u16);
             #[cfg(target_os = "macos")]
-                let scroll_down_key = key_from_code(SCROLL_DOWN_BIND.unwrap() as u32);
+                let scroll_down_key = key_from_code(SCROLL_DOWN_BIND.unwrap() as u16);
 
             if !SCROLL_DOWN_BIND.is_none() && key == scroll_down_key {
                 scroll_bind_event();
