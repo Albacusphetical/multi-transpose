@@ -12,7 +12,7 @@ Now with new scroll by keyboard feature introduced in version 1.2.8!
 
 [Install](https://github.com/Albacusphetical/multi-transpose/tree/main?tab=readme-ov-file#installation)
 
-[![multi-transpose-showcase](https://github.com/Albacusphetical/multi-transpose/assets/137510000/603c3c3e-edb0-4719-8a17-b22e09043d4b)
+[![multi-transpose-showcase](https://github.com/user-attachments/assets/eda3aaae-aea3-4ff5-a94c-ac19d7b0dab2)
 ](https://github.com/Albacusphetical/multi-transpose/releases/latest)
 
 Check out this [converter](https://github.com/ArijanJ/midi-converter) if you want to create multi-transpose sheets and copy and paste in transposes.
