@@ -8,7 +8,7 @@ Any-to-any transposition for VP, go from transpose X to Y instantly.
 
 Cross-platform and compatible with websites and games that allow you to transpose with your keyboard.
 
-Now with new scroll by keyboard feature introduced in version 1.2.9!
+Now with new scroll by keybind feature introduced in version 1.2.8!
 
 [Install](https://github.com/Albacusphetical/multi-transpose/tree/main?tab=readme-ov-file#installation)
 
