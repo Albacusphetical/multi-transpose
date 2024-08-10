@@ -90,6 +90,7 @@ pub fn callback(event: Event, app_handle: &AppHandle, last_press: &Arc<Mutex<Opt
                 return;
             }
 
+
             #[cfg(target_os = "windows")]
                 let pause_key = key_from_code(PAUSE_BIND.unwrap() as u32);
             #[cfg(target_os = "windows")]
@@ -97,7 +98,7 @@ pub fn callback(event: Event, app_handle: &AppHandle, last_press: &Arc<Mutex<Opt
             #[cfg(target_os = "windows")]
                 let previous_transpose_key = key_from_code(PREVIOUS_TRANSPOSE_BIND.unwrap() as u32);
             #[cfg(target_os = "windows")]
-                let scroll_down_key = key_from_code(SCROLL_DOWN_BIND.unwrap() as u32);
+                let scroll_down_key = SCROLL_DOWN_BIND.map(|bind| key_from_code(bind as u32));
 
             #[cfg(target_os = "linux")]
                 let pause_key = key_from_code(PAUSE_BIND.unwrap() as u32);
@@ -106,7 +107,7 @@ pub fn callback(event: Event, app_handle: &AppHandle, last_press: &Arc<Mutex<Opt
             #[cfg(target_os = "linux")]
                 let previous_transpose_key = key_from_code(PREVIOUS_TRANSPOSE_BIND.unwrap() as u32);
             #[cfg(target_os = "linux")]
-                let scroll_down_key = key_from_code(SCROLL_DOWN_BIND.unwrap() as u32);
+                let scroll_down_key = SCROLL_DOWN_BIND.map(|bind| key_from_code(bind as u32));
 
             #[cfg(target_os = "macos")]
                 let pause_key = key_from_code(PAUSE_BIND.unwrap() as u16);
@@ -115,10 +116,12 @@ pub fn callback(event: Event, app_handle: &AppHandle, last_press: &Arc<Mutex<Opt
             #[cfg(target_os = "macos")]
                 let previous_transpose_key = key_from_code(PREVIOUS_TRANSPOSE_BIND.unwrap() as u16);
             #[cfg(target_os = "macos")]
-                let scroll_down_key = key_from_code(SCROLL_DOWN_BIND.unwrap() as u16);
+                let scroll_down_key = SCROLL_DOWN_BIND.map(|bind| key_from_code(bind as u16));
 
-            if !SCROLL_DOWN_BIND.is_none() && key == scroll_down_key {
-                scroll_bind_event();
+            if let Some(scroll_down_key) = scroll_down_key {
+                if key == scroll_down_key {
+                    scroll_bind_event();
+                }
             }
 
             if !PAUSE_BIND.is_none() && key == pause_key {
