@@ -41,6 +41,7 @@ function App() {
   const [canTranspose, setCanTranspose] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [transposeMonitorWebview, setTransposeMonitorWebview] = useState(null)
+  const [scrollVal, setScrollVal] = useState(Number(window.localStorage.getItem("scrollDownVal")) ?? 0)
 
   const [eventFromBackend, setEventFromBackend] = useState({}) // for debugging
 
@@ -171,13 +172,18 @@ function App() {
     sendEventToTransposeMonitor(getRequiredDataForMonitorWindow())
   }, [keybindConfig, canTranspose, transposes, selectedIndex, paused]);
 
+  useEffect(() => {
+    window.localStorage.setItem("scrollDownVal", scrollVal)
+    emit("backend_event", {scroll_value: scrollVal})
+  }, [scrollVal])
 
   return (
     isDatabaseReady &&
       <div className={"container"}>
         <span className={"transpose-input"}>
-          <Tooltip content={canTranspose ? "Example: 0 -1 +1 1" : "Keybinds must be set first!"}>
+          <Tooltip defaultIsOpen={true} content={canTranspose ? "Example: 0 -1 +1 1" : "Keybinds must be set first!"}>
             <InputGroup
+                id={"transposes-input"}
                 onInput={(e) => sendTransposesHandler(getTransposesFromText(e.target.value))}
                 disabled={!canTranspose}
                 fill={true}
@@ -223,7 +229,8 @@ function App() {
                     inputClassName={"scroll-amount"}
                     buttonPosition={"left"}
                     placeholder={"Scroll"}
-                    onValueChange={(valAsNum, valAsString, el) => emit("backend_event", {scroll_value: ~~valAsNum})}
+                    onValueChange={(valAsNum, valAsString, el) => setScrollVal(~~valAsNum)}
+                    value={keybindConfig.config?.scroll_down?.value == null ? null : scrollVal}
                     min={0}
                     max={10}
                 />
@@ -250,6 +257,12 @@ function App() {
                 emit("backend_event", {pause: false})
                 setIsPaused(false);
                 setCanTranspose(true);
+              }
+
+              if (!paused && !e.canTranspose) {
+                emit("backend_event", {pause: true})
+                setIsPaused(true)
+                setCanTranspose(false)
               }
 
               setKeybindConfig(e);

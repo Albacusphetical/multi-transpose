@@ -47,7 +47,14 @@ pub unsafe fn play_sound(name: Sound, app_handle: AppHandle) {
         };
 
         // Get a output stream handle to the default physical sound device
-        let (_stream, stream_handle) = OutputStream::try_default().unwrap();
+        let audio_output_device = OutputStream::try_default();
+
+        if let Err(err) = audio_output_device {
+            error!("{:?}", err);
+            return;
+        }
+
+        let (_stream, stream_handle) = audio_output_device.unwrap();
 
         let mut duration = source.total_duration();
         if duration.is_none() {

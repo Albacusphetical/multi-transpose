@@ -1,8 +1,15 @@
 import TransposeMatrixItem from "./TransposeMatrixItem.jsx";
 
 const TransposeMatrix = ({index, transposes}) => {
+    const transposesInputEl = document.getElementById("transposes-input")
+
     return (
-        <div className={"transpose-matrix-container"}>
+        <div
+            className={"transpose-matrix-container"}
+            onMouseOver={() => {
+                transposesInputEl.focus()
+            }}
+        >
             {transposes.length < 1
                 ?
                 <span className={"transpose-matrix-empty"}>

@@ -98,16 +98,16 @@ unsafe fn key_listen_event(key_listen: &Value) {
 }
 
 unsafe fn set_keybind_event(keybind: &Value, app_handle: AppHandle, last_press: Arc<Mutex<Option<Instant>>>) {
-    let keycode = keybind.get("keycode").unwrap().as_u64().unwrap();
+    let keycode = keybind.get("keycode").and_then(|k| k.as_u64());
     let bind_name = keybind.get("name").unwrap().as_str().unwrap();
 
     match bind_name {
-        "pause" => PAUSE_BIND = Some(keycode),
-        "transpose_up" => TRANSPOSE_UP_BIND = Some(keycode),
-        "transpose_down" => TRANSPOSE_DOWN_BIND = Some(keycode),
-        "next_transpose" => NEXT_TRANSPOSE_BIND = Some(keycode),
-        "previous_transpose" => PREVIOUS_TRANSPOSE_BIND = Some(keycode),
-        "scroll_down" => SCROLL_DOWN_BIND = Some(keycode),
+        "pause" => PAUSE_BIND = keycode,
+        "transpose_up" => TRANSPOSE_UP_BIND = keycode,
+        "transpose_down" => TRANSPOSE_DOWN_BIND = keycode,
+        "next_transpose" => NEXT_TRANSPOSE_BIND = keycode,
+        "previous_transpose" => PREVIOUS_TRANSPOSE_BIND = keycode,
+        "scroll_down" => SCROLL_DOWN_BIND = keycode,
         _ => {}
     }
 }

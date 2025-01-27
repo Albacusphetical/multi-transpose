@@ -7,35 +7,41 @@ import {getKeybindConfig, updateKeybindConfig} from "../queries.js";
 import {appToaster} from "../App.jsx";
 
 const defaultConfig = {
-    version: 2,
+    version: 3,
     keys: {
         "pause": {
             "purpose": "Pause All Binds",
+            "desc": "Prevents the app from simulating keys.",
             "value": null,
             "required": true
         },
         "transpose_up": {
             "purpose": "Transpose Up",
+            "desc": "The key used in your piano app to transpose +1. They must match!",
             "value": null,
             "required": true
         },
         "transpose_down": {
             "purpose": "Transpose Down",
+            "desc": "The key used in your piano app to transpose -1. They must match!",
             "value": null,
             "required": true
         },
         "next_transpose": {
             "purpose": "Next Transpose",
+            "desc": "The key you prefer to change the highlighted transpose to the next one, e.g. Tab. Presses the keys set for Transpose Up/Down in your piano app x times.",
             "value": null,
             "required": true
         },
         "previous_transpose": {
             "purpose": "Previous Transpose",
+            "desc": "The key you prefer to change the highlighted transpose to the previous one, e.g. CapsLock. Presses the keys set for Transpose Up/Down in your piano app x times.",
             "value": null,
             "required": true
         },
         "scroll_down": {
             "purpose": "Scroll",
+            "desc": "The key you want to use to scroll down when hovering over the scroll area of your sheet.",
             "value": null,
             "required": false
         }
@@ -47,13 +53,14 @@ const restrictedKeys = new Set("1!2@34$5%6^78*9(0)qwertyuiopQWERTYUIOPasdfghjklA
 
 const KeyBindManager = ({onListen = (isListening) => {}, onKeybindSet = (e) => {}}) => {
     const {database} = useDatabase();
-    const [config, setConfig] = useState(defaultConfig.keys);
+    const [config, setConfig] = useState({...defaultConfig.keys});//s
     const [configName, setConfigName] = useState("default");
     const [hasFetchedDefaultConfig, setHasFetchedDefaultConfig] = useState(false);
     const [isListening, setIsListening] = useState(false);
     const [whoIsListening, setWhoIsListening] = useState("");
     const [keysInUse, setKeysInUse] = useState(new Set());
     const [isAbleToTranspose, setIsAbleToTranspose] = useState(false);
+    const [isManagerOpen, setIsManagerOpen] = useState(false);
 
     const listenForKey = (name) => {
         // already listening
@@ -74,7 +81,20 @@ const KeyBindManager = ({onListen = (isListening) => {}, onKeybindSet = (e) => {
             setWhoIsListening("");
 
             const valid = await validateKeyToUse(key);
-            if (!valid) {
+            if (valid === "in_use") {
+                // deletes current key selected used in the other keybind before setting it
+                const currKeybindUsingKey = getKeybindCfgNameOfKeycode(keycode)
+                if (currKeybindUsingKey === name) {
+                    return;
+                }
+
+                keysInUse.delete(config[currKeybindUsingKey].value?.key)
+                config[currKeybindUsingKey] = {...defaultConfig.keys[currKeybindUsingKey]}
+
+                // reset key in backend
+                emit("backend_event", {bind: {name: currKeybindUsingKey, keycode: keycode}})
+            }
+            else if (!valid) {
                 return;
             }
 
@@ -96,14 +116,14 @@ const KeyBindManager = ({onListen = (isListening) => {}, onKeybindSet = (e) => {
         const toaster = await appToaster;
 
         if (keysInUse.has(key)) {
-            toaster.clear()
-            toaster.show({
-                ...generalKeyBindToastConfig,
-                message: 'This key is already in use',
-                intent: 'danger',
-            })
+            // toaster.clear()
+            // toaster.show({
+            //     ...generalKeyBindToastConfig,
+            //     message: 'This key is already in use',
+            //     intent: 'danger',
+            // })
 
-            return false;
+            return "in_use";
         }
 
 
@@ -126,6 +146,16 @@ const KeyBindManager = ({onListen = (isListening) => {}, onKeybindSet = (e) => {
         }
 
         return true;
+    }
+
+    const getKeybindCfgNameOfKeycode = (keycode) => {
+        for (const key of Object.keys(config)) {
+            if (config[key].value?.keyCode === keycode) {
+                return key
+            }
+        }
+
+        return false
     }
 
     useEffect(() => {
@@ -164,6 +194,7 @@ const KeyBindManager = ({onListen = (isListening) => {}, onKeybindSet = (e) => {
     useEffect(() => {
         if (hasFetchedDefaultConfig) {
             let canTranspose = Object.values(config).every(key => !key.required || key.value !== null);
+
             setIsAbleToTranspose(canTranspose)
             onKeybindSet({config, canTranspose})
         }
@@ -174,9 +205,10 @@ const KeyBindManager = ({onListen = (isListening) => {}, onKeybindSet = (e) => {
         <Section
             className={"keybind-manager-container"}
             title={"Keybinds"}
-            collapsible={true}
-            collapseProps={{defaultIsOpen: !isAbleToTranspose}}
+            defaultIsOpen={true}
+            collapsible={isAbleToTranspose}
             icon={"key"}
+            onClick={() => setIsManagerOpen(isAbleToTranspose === false ? true : !isManagerOpen)}
         >
             <SectionCard>
                 <span className={"keybind-manager-content"}>
@@ -188,6 +220,7 @@ const KeyBindManager = ({onListen = (isListening) => {}, onKeybindSet = (e) => {
                             key={name}
                             name={name}
                             purpose={data.purpose}
+                            desc={defaultConfig.keys[name].desc}
                             listener={listenForKey}
                             isListening={isListening && whoIsListening === name}
                         />
