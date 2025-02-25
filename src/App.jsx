@@ -41,9 +41,26 @@ function App() {
   const [canTranspose, setCanTranspose] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [transposeMonitorWebview, setTransposeMonitorWebview] = useState(null)
+  const [sheetViewerWebview, setSheetViewerWebview] = useState(null)
   const [scrollVal, setScrollVal] = useState(Number(window.localStorage.getItem("scrollDownVal")) ?? 0)
 
   const [eventFromBackend, setEventFromBackend] = useState({}) // for debugging
+
+  const spawnSheetViewerWindow = () => {
+      const options = {
+          url: "../sheet-viewer-window.html",
+          title: "Sheet Viewer",
+          alwaysOnTop: true,
+          maximizable: true,
+          resizable: true,
+          focus: false,
+          transparent: true,
+          fileDropEnabled: false,
+          // decorations: false
+      }
+
+      return spawnWindow('sheet-viewer', options)
+  }
 
   /** @returns {Promise<WebviewWindow>}*/
   const spawnTransposeMonitor = () => {
@@ -63,14 +80,18 @@ function App() {
     return spawnWindow('transpose-monitor', options);
   }
 
-  const getRequiredDataForMonitorWindow = () => {
+  const getRequiredDataForExternalWindows = () => {
     return {keybindConfig, canTranspose, transposes, selectedIndex, paused}
   }
 
-  const sendEventToTransposeMonitor = (event) => {
-    // send event to transpose monitor window, if available
+  const sendEventToExternalWindows = (event) => {
+    // send event to external windows, if available
     if (transposeMonitorWebview !== null) {
       transposeMonitorWebview.emit("transpose_monitor_event", event);
+    }
+
+    if (sheetViewerWebview !== null) {
+      sheetViewerWebview.emit("sheet_viewer_event", event);
     }
   }
 
@@ -159,7 +180,7 @@ function App() {
     if (transposeMonitorWebview !== null) {
       transposeMonitorWebview.once("transpose_monitor_ready", () => {
         // on window ready, send current data it requires
-        transposeMonitorWebview.emit("transpose_monitor_event", getRequiredDataForMonitorWindow())
+        transposeMonitorWebview.emit("transpose_monitor_event", getRequiredDataForExternalWindows())
       })
 
       transposeMonitorWebview.once(TauriEvent.WINDOW_CLOSE_REQUESTED, () => {
@@ -169,7 +190,20 @@ function App() {
   }, [transposeMonitorWebview]);
 
   useEffect(() => {
-    sendEventToTransposeMonitor(getRequiredDataForMonitorWindow())
+      if (sheetViewerWebview !== null) {
+          sheetViewerWebview.once("sheet_viewer_ready", () => {
+              // on window ready, send current data it requires
+              sheetViewerWebview.emit("sheet_viewer_event", getRequiredDataForExternalWindows())
+          })
+
+          sheetViewerWebview.once(TauriEvent.WINDOW_CLOSE_REQUESTED, () => {
+              setSheetViewerWebview(null);
+          })
+      }
+  }, [sheetViewerWebview]);
+
+  useEffect(() => {
+    sendEventToExternalWindows(getRequiredDataForExternalWindows())
   }, [keybindConfig, canTranspose, transposes, selectedIndex, paused]);
 
   useEffect(() => {
@@ -192,6 +226,18 @@ function App() {
             />
           </Tooltip>
         </span>
+
+      <Tooltip content={"Use sheet on top while playing"}>
+          <Button
+              disabled={!canTranspose}
+              onClick={async () => {
+                  const webview = await spawnSheetViewerWindow();
+                  setSheetViewerWebview(webview)
+              }}
+          >
+              Sheet Viewer
+          </Button>
+      </Tooltip>
 
         <Tooltip content={"View transposes while playing"}>
           <Button

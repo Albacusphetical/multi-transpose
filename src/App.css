@@ -160,3 +160,24 @@
     width: 55px!important;
     margin-right: 5px;
 }
+
+.transposes-monitor-sheet-viewer {
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    padding: 3px;
+    margin-top: 15px;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+}
+
+.transposes-monitor-sheet-viewer > .transposes-monitor {
+    width: 333px;
+}

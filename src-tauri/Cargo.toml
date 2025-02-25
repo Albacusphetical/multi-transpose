@@ -1,7 +1,7 @@
 [package]
 name = "multi-transpose"
 description = "multi-transpose"
-version = "1.3.0"
+version = "1.3.1"
 authors = ["Albacusphetical"]
 license = "MIT"
 repository = "https://github.com/Albacusphetical/multi-transpose"
@@ -10,7 +10,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tauri = { version = "1.5", features = [ "fs-exists", "path-all", "fs-write-file", "fs-read-file", "updater", "window-create", "shell-open"] }
+tauri = { version = "1.5", features = [ "clipboard-all", "window-set-title", "fs-exists", "path-all", "fs-write-file", "fs-read-file", "updater", "window-create", "shell-open"] }
 tauri-plugin-sql = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1", features = ["sqlite"] }
 tauri-plugin-log = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
 log = "^0.4"
@@ -19,6 +19,13 @@ serde_json = "1.0"
 lazy_static = { version = "1.4.0", features = [] }
 rdev = { git = "https://github.com/Albacusphetical/rdev", branch = "master", features = ["serialize"] }
 rodio = "0.17.3"
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.52", features = ["Win32_UI_WindowsAndMessaging", "Win32_Foundation"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+cocoa = "0.24"
+objc = "0.2"
 
 [build-dependencies]
 tauri-build = { version = "1.5", features = [] }

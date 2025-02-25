@@ -1,6 +1,15 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+#[cfg(target_os = "windows")]
+use windows::Win32::UI::WindowsAndMessaging::{SetWindowLongPtrW, GetWindowLongPtrW, GWL_EXSTYLE, WS_EX_NOACTIVATE};
+
+#[cfg(target_os = "macos")]
+use cocoa::appkit::NSWindow;
+
+#[cfg(target_os = "linux")]
+use gtk::gdk::WindowExt;
+
 mod event_processing;
 mod keyboard;
 mod audio;
@@ -16,12 +25,14 @@ use std::{panic, thread};
 use std::time::{Instant};
 use lazy_static::lazy_static;
 use rdev::listen;
-
+use windows::Win32::Foundation::HWND;
 // first time using rust... forgive me if you see sacrilegious things :-)
 
 static mut PAUSED: bool = true;
 static mut CURRENT_TRANSPOSE: i32 = 0;
 static mut SCROLL_VALUE: i64 = 0;
+
+// transposition logic
 
 lazy_static! {
     static ref TRANSPOSES: Mutex<Vec<i32>> = Mutex::new(vec![0]);
@@ -71,6 +82,47 @@ unsafe fn transpose_down() {
     send_key(TRANSPOSE_DOWN_BIND.unwrap());
 }
 
+fn apply_non_focusable(window: &tauri::Window) {
+    #[cfg(target_os = "windows")]
+    {
+        // Handle Result instead of Option
+        if let Ok(hwnd) = window.hwnd() {
+            unsafe {
+                let hwnd = HWND(hwnd.0 as isize);
+
+                // Get current window style
+                let style = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
+
+                // Apply WS_EX_NOACTIVATE using isize type for both sides
+                SetWindowLongPtrW(hwnd, GWL_EXSTYLE, style | WS_EX_NOACTIVATE.0 as isize);
+            }
+        } else {
+            eprintln!("Failed to get window handle");
+        }
+    }
+
+
+    #[cfg(target_os = "macos")]
+    {
+        use objc::runtime::NO;
+        use tauri::WindowExtMacos;
+        if let Some(ns_window) = window.ns_window() {
+            unsafe {
+                ns_window.setCanBecomeKeyWindow_(NO);
+                ns_window.setCanBecomeMainWindow_(NO);
+            }
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        use tauri::WindowExtGtk;
+        if let Some(gdk_window) = window.gdk_window() {
+            gdk_window.set_accept_focus(false);
+        }
+    }
+}
+
 fn main() {
     let db_migrations = vec![
         // Define your migrations here
@@ -117,6 +169,12 @@ fn main() {
             LogTarget::Stdout,
         ]).build())
         .on_window_event(|event| match event.event() {
+            tauri::WindowEvent::Focused(_) => {
+                let window = event.window();
+                if window.label() == "sheet-viewer" || window.label() == "transpose-monitor" {
+                    apply_non_focusable(&window);
+                }
+            }
             tauri::WindowEvent::CloseRequested { api, .. } => {
                 if event.window().label() == "main" {
                     // ensure no windows persist
