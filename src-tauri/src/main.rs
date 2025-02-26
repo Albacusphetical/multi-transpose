@@ -2,13 +2,35 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 #[cfg(target_os = "windows")]
-use windows::Win32::UI::WindowsAndMessaging::{SetWindowLongPtrW, GetWindowLongPtrW, GWL_EXSTYLE, WS_EX_NOACTIVATE};
+mod windows {
+    pub use windows::Win32::UI::WindowsAndMessaging::{SetWindowLongPtrW, GetWindowLongPtrW, GWL_EXSTYLE, WS_EX_NOACTIVATE};
+    pub use windows::Win32::Foundation::HWND;
+}
+
+#[cfg(target_os = "windows")]
+use windows::*;
 
 #[cfg(target_os = "macos")]
-use cocoa::appkit::NSWindow;
+mod macos {
+    pub use cocoa::appkit::NSWindow;
+    pub use cocoa::base::id as id;
+    pub use objc::sel;
+    pub use objc::sel_impl;
+    pub use objc::runtime::NO;
+    pub use objc::msg_send;
+}
+
+#[cfg(target_os = "macos")]
+use macos::*;
 
 #[cfg(target_os = "linux")]
-use gtk::gdk::WindowExt;
+mod linux {
+    pub use gtk::gdk::WindowExt;
+    pub use tauri::WindowExtGtk;
+}
+
+#[cfg(target_os = "linux")]
+use linux::*;
 
 mod event_processing;
 mod keyboard;
@@ -25,7 +47,7 @@ use std::{panic, thread};
 use std::time::{Instant};
 use lazy_static::lazy_static;
 use rdev::listen;
-use windows::Win32::Foundation::HWND;
+
 // first time using rust... forgive me if you see sacrilegious things :-)
 
 static mut PAUSED: bool = true;
@@ -85,40 +107,31 @@ unsafe fn transpose_down() {
 fn apply_non_focusable(window: &tauri::Window) {
     #[cfg(target_os = "windows")]
     {
-        // Handle Result instead of Option
         if let Ok(hwnd) = window.hwnd() {
             unsafe {
-                let hwnd = HWND(hwnd.0 as isize);
+                let hwnd = windows::HWND(hwnd.0 as isize);
 
-                // Get current window style
-                let style = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
+                let style = windows::GetWindowLongPtrW(hwnd, windows::GWL_EXSTYLE);
 
-                // Apply WS_EX_NOACTIVATE using isize type for both sides
-                SetWindowLongPtrW(hwnd, GWL_EXSTYLE, style | WS_EX_NOACTIVATE.0 as isize);
+                windows::SetWindowLongPtrW(hwnd, windows::GWL_EXSTYLE, style | windows::WS_EX_NOACTIVATE.0 as isize);
             }
-        } else {
-            eprintln!("Failed to get window handle");
+        }
+        else {
+            error!("Failed to get window handle");
         }
     }
 
 
     #[cfg(target_os = "macos")]
     {
-        use objc::runtime::NO;
-        use tauri::WindowExtMacos;
-        if let Some(ns_window) = window.ns_window() {
-            unsafe {
-                ns_window.setCanBecomeKeyWindow_(NO);
-                ns_window.setCanBecomeMainWindow_(NO);
-            }
-        }
+        // not 100% necessary, app windows on macos can stay on top of others if not in fullscreen mode
+        // TODO: consider revisiting this functionality on macos
     }
 
     #[cfg(target_os = "linux")]
     {
-        use tauri::WindowExtGtk;
-        if let Some(gdk_window) = window.gdk_window() {
-            gdk_window.set_accept_focus(false);
+        if let Some(gtk_window) = window.gtk_window() {
+            linux::gtk_window.set_accept_focus(false);
         }
     }
 }
@@ -139,15 +152,18 @@ fn main() {
         // Extract panic message and location
         let message = if let Some(s) = panic_info.payload().downcast_ref::<&str>() {
             s.to_string()
-        } else if let Some(s) = panic_info.payload().downcast_ref::<String>() {
+        }
+        else if let Some(s) = panic_info.payload().downcast_ref::<String>() {
             s.clone()
-        } else {
+        }
+        else {
             "Unknown panic".to_string()
         };
 
         let location = if let Some(location) = panic_info.location() {
             format!("{}:{}", location.file(), location.line())
-        } else {
+        }
+        else {
             "Unknown location".to_string()
         };
 

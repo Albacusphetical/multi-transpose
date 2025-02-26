@@ -7,6 +7,7 @@ import {
 } from "./utils.js";
 import {Callout, OverlayToaster, Spinner} from "@blueprintjs/core";
 import TransposeMonitor from "./components/TransposeMonitor.jsx";
+import SheetViewerSettings from "./components/SheetViewerSettings.jsx";
 
 const toaster = OverlayToaster.createAsync({...overlayToasterDefaultProps, position: "top-right"});
 
@@ -23,27 +24,27 @@ function SheetViewer() {
     const [filePath, setFilePath] = useState("")
     const [content, setContent] = useState()
     const [zoomLevel, setZoomLevel] = useState(0.1);
-    const zoomConstant = 0.01;
+    const [zoomConstant, setZoomConstant] = useState(0.01);
 
     const zoomIn = () => setZoomLevel(prev => prev + zoomConstant);
     const zoomOut = () => setZoomLevel(prev =>
         prev - zoomConstant >= 0.2 ? prev - zoomConstant : prev
     );
 
-    const handleWheelEvent = (event) => {
+    const handleZoomWheelEvent = (event) => {
         if (event.ctrlKey) {
             event.preventDefault();
             event.deltaY < 0 ? zoomIn() : zoomOut();
         }
     };
 
-    const handleKeydownEvent = (event) => {
+    const handleZoomKeydownEvent = (event) => {
         if (event.ctrlKey) {
-            if (event.key === '+') {
+            if (event.key === '+' || event.key === "=") {
                 zoomIn();
                 event.preventDefault();
             }
-            else if (event.key === '-') {
+            else if (event.key === '-' || event.key === "_") {
                 zoomOut();
                 event.preventDefault();
             }
@@ -80,49 +81,50 @@ function SheetViewer() {
     };
 
     const handlePaste = async (event) => {
+        // note: for macos/safari, clipboard must be accessed synchronously via a transient user action
+
         setLoading(true);
-        setTimeout(async () => {
-            if (navigator.clipboard?.read) {
-                const clipboardItems = await navigator.clipboard.read();
-                const lastItem = clipboardItems[clipboardItems.length - 1];
+        if (navigator.clipboard?.read) {
+            const clipboardItems = await navigator.clipboard.read();
+            const lastItem = clipboardItems[clipboardItems.length - 1];
 
-                if (["image/png", "image/jpeg", "image/gif"].some(type =>
-                    lastItem.types.includes(type))
-                ) {
-                    const blob = await lastItem.getType("image/png") ||
-                        await lastItem.getType("image/jpeg") ||
-                        await lastItem.getType("image/gif");
-                    processImageContent(blob);
-                }
-                else if (lastItem.types.includes("text/plain")) {
-                    await processTextContent(lastItem);
-                }
-            }
-            else if (event.clipboardData?.items) {
-                // Fallback handling
-                const items = event.clipboardData.items;
-                const lastItem = items[items.length - 1];
+            if (["image/png", "image/jpeg", "image/gif"].some(type =>
+                lastItem.types.includes(type))
+            ) {
+                const blob = await lastItem.getType("image/png") ||
+                    await lastItem.getType("image/jpeg") ||
+                    await lastItem.getType("image/gif");
 
-                if (lastItem.type.startsWith("image/")) {
-                    processImageContent(lastItem.getAsFile());
-                }
-                else if (lastItem.type === "text/plain") {
-                    lastItem.getAsString(text => {
-                        if (content) URL.revokeObjectURL(content);
+                processImageContent(blob);
+            }
+            else if (lastItem.types.includes("text/plain")) {
+                await processTextContent(lastItem);
+            }
+        }
+        else if (event.clipboardData?.items) {
+            const items = event.clipboardData.items;
+            const lastItem = items[items.length - 1];
 
-                        setContent(text);
-                        setFilePath(isImageSource(text) ? "pasted_image" : "text");
-                    });
-                }
+            if (lastItem.type.startsWith("image/")) {
+                processImageContent(lastItem.getAsFile());
             }
-            else {
-                setLoading(null)
-                return;
+            else if (lastItem.type === "text/plain") {
+                lastItem.getAsString(text => {
+                    if (content) URL.revokeObjectURL(content);
+
+                    setContent(text);
+                    setFilePath(isImageSource(text) ? "pasted_image" : "text");
+                });
             }
-            setLoading(false);
-            setZoomLevel(0.2);
-            window.scroll(0, 0);
-        }, 1);
+        }
+        else {
+            setLoading(null)
+            return;
+        }
+
+        setLoading(false);
+        setZoomLevel(0.2);
+        window.scroll(0, 0);
     };
 
     const handleDrop = async (event) => {
@@ -173,16 +175,14 @@ function SheetViewer() {
         document.documentElement.style.borderStyle = "unset";
     }
 
+    const isFilePathImage = (filePath) => {
+        return filePath === "pasted_image" || filePath.endsWith(".png") || filePath.endsWith(".jpg") || filePath.endsWith(".jpeg") || filePath.endsWith(".gif")
+    }
+
     useEffect(() => {
         const unlisten = listen("sheet_viewer_event", (event) => {
             setData(event.payload)
         })
-
-
-        document.addEventListener("dragover", handleDragover)
-        document.addEventListener("dragleave", handleDragleave)
-        document.addEventListener('drop', handleDrop);
-        document.addEventListener("paste", handlePaste);
 
         // signal this window is ready for data
         emit("sheet_viewer_ready", null);
@@ -194,8 +194,14 @@ function SheetViewer() {
         document.addEventListener('keydown', preventCaretOnKeydownCallback);
 
         // zoom in/out listeners
-        window.addEventListener('wheel', handleWheelEvent);
-        window.addEventListener('keydown', handleKeydownEvent);
+        window.addEventListener('wheel', handleZoomWheelEvent);
+        window.addEventListener('keydown', handleZoomKeydownEvent);
+
+        // drag & drop / clipboard listeners
+        document.addEventListener("dragover", handleDragover)
+        document.addEventListener("dragleave", handleDragleave)
+        document.addEventListener('drop', handleDrop);
+        document.addEventListener("paste", handlePaste);
 
         return () => {
             unlisten.then(cleanFn => cleanFn());
@@ -205,23 +211,22 @@ function SheetViewer() {
             removeEventListener("paste", handlePaste)
             removeEventListener('keydown', preventRefreshOnKeydownCallback);
             removeEventListener('keydown', preventCaretOnKeydownCallback);
-            removeEventListener('wheel', handleWheelEvent)
-            removeEventListener('keydown', handleKeydownEvent)
+            removeEventListener('wheel', handleZoomWheelEvent)
+            removeEventListener('keydown', handleZoomKeydownEvent)
         }
     }, []);
 
     useEffect(() => {
         const body = document.getElementById("sheet-viewer-body")
         if (loading === null) {
-            document.documentElement.style = "background: inherit; color: black;"
-            body.style = "background: inherit; color: black;";
+            document.documentElement.color = "black"
+            body.style.color = "black";
         }
         else {
-            document.documentElement.style = "background: black; color: white; font-family: Verdana;"
-            body.style = "background: black; color: white; font-family: Verdana;";
+            document.documentElement.style.color = "white"
+            body.style.color = "white"
         }
     }, [loading])
-
 
     useEffect(() => {
         toastOnPause(toaster, data.paused, data.canTranspose)
@@ -254,9 +259,15 @@ function SheetViewer() {
                     : (
                         <div>
                             {/*<Callout>Zoom {1 + zoomLevel.toFixed(2)}</Callout>*/}
-                            <div id="fileViewer" style={{background: "#2d2a32"}}>
+                            <div
+                                id="fileViewer"
+                                className={"user-select"}
+                                style={{background: "#2d2a32", cursor: "zoom-in"}}
+                                onClick={zoomIn}
+                                onContextMenu={zoomOut}
+                            >
                                 {filePath && (
-                                    (filePath === "pasted_image" || filePath.endsWith(".png") || filePath.endsWith(".jpg") || filePath.endsWith(".jpeg") || filePath.endsWith(".gif"))
+                                    (isFilePathImage(filePath))
                                     ? (
                                         <img id="data" src={content} style={{ zoom: zoomLevel }} />
                                     )
@@ -279,8 +290,24 @@ function SheetViewer() {
             </div>
 
             {loading !== null &&
-                <div className="transposes-monitor-sheet-viewer">
-                    <TransposeMonitor data={data}/>
+                <div className="sheet-viewer-footer">
+                    <div className={"transposes-monitor-sheet-viewer"}>
+                        <TransposeMonitor data={data}/>
+                    </div>
+
+                    <SheetViewerSettings
+                        onUpdate={(settings) => {
+                           if (settings?.transparency !== undefined) {
+                               const background = `rgba(0, 0, 0, ${1 - settings.transparency / 10})`
+                               document.documentElement.style.background = background
+                               document.body.style.background = background
+                           }
+
+                           if (settings?.zoomConstant !== undefined) {
+                               setZoomConstant(settings.zoomConstant)
+                           }
+                        }}
+                    />
                 </div>
             }
         </>

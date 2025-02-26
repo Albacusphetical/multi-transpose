@@ -1,5 +1,6 @@
 import BlankTransposeMatrixItem from "./BlankTransposeMatrixItem.jsx";
 import TransposeMatrixItem from "./TransposeMatrixItem.jsx";
+import {useEffect} from "react";
 
 function PrevTransposeItem({data}) {
     if (data?.selectedIndex === undefined || data?.transposes === undefined) return <BlankTransposeMatrixItem/>
@@ -8,11 +9,14 @@ function PrevTransposeItem({data}) {
     const transpose = data.transposes[index];
 
     return (
-        index !== data.selectedIndex && transpose !== undefined
-            ?
-            <TransposeMatrixItem index={index} transpose={transpose} selected={false} />
-            :
-            <BlankTransposeMatrixItem/>
+        <span style={{color: "black"}}>
+            {index !== data.selectedIndex && transpose !== undefined
+                ?
+                <TransposeMatrixItem index={index} transpose={transpose} selected={false} />
+                :
+                <BlankTransposeMatrixItem/>
+            }
+        </span>
     )
 }
 

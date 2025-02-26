@@ -75,8 +75,8 @@ Now start multi-transpose from Applications, it will start, otherwise, if you se
 **Linux:** N/A
 
 **MacOS:** 
-- Some buttons/icons are visually glitched but still function.
-- Monitor window height for transposes is initially squished but can still be resized.
+- Some buttons/icons may be visually glitched depending on MacOS version but still function.
+- Sheet Viewer can't be on top of an application that is in fullscreen mode.
 
 # Project setup
 

@@ -15,7 +15,6 @@
     "core-js": "^3.36.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "tauri-plugin-clipboard-api": "^1.1.4",
     "tauri-plugin-sql-api": "github:tauri-apps/tauri-plugin-sql#v1"
   },
   "devDependencies": {

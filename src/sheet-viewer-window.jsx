@@ -9,11 +9,14 @@ import "@blueprintjs/icons/lib/css/blueprint-icons.css";
 import "./App.css";
 import "./styles.css";
 import SheetViewerWindow from "./SheetViewerWindow.jsx";
+import {OverlaysProvider} from "@blueprintjs/core";
 
 
 ReactDOM.createRoot(document.getElementById("sheet-viewer-root")).render(
     // only enable StrictMode while developing
 // <React.StrictMode>
-    <SheetViewerWindow/>
+    <OverlaysProvider>
+        <SheetViewerWindow/>
+    </OverlaysProvider>
     // </React.StrictMode>,
 );

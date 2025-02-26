@@ -8,11 +8,14 @@ function NextTransposeItem({data}) {
     const transpose = data.transposes[index];
 
     return (
-        index !== data.selectedIndex && transpose !== undefined
-            ?
-            <TransposeMatrixItem index={index} transpose={transpose} selected={false} />
-            :
-            <BlankTransposeMatrixItem/>
+        <span style={{color: "black"}}>
+            {index !== data.selectedIndex && transpose !== undefined
+                ?
+                <TransposeMatrixItem index={index} transpose={transpose} selected={false} />
+                :
+                <BlankTransposeMatrixItem/>
+            }
+        </span>
     )
 }
 

@@ -56,7 +56,8 @@ function App() {
           focus: false,
           transparent: true,
           fileDropEnabled: false,
-          // decorations: false
+          minWidth: 300,
+          minHeight: 200,
       }
 
       return spawnWindow('sheet-viewer', options)
@@ -70,11 +71,11 @@ function App() {
       alwaysOnTop: true,
       maximizable: false,
       width: 200,
-      height: 75,
+      height: 100,
       maxWidth: 300,
       maxHeight: 200,
       minWidth: 200,
-      minHeight: 75
+      minHeight: 100
     }
 
     return spawnWindow('transpose-monitor', options);
@@ -278,7 +279,7 @@ function App() {
                     onValueChange={(valAsNum, valAsString, el) => setScrollVal(~~valAsNum)}
                     value={keybindConfig.config?.scroll_down?.value == null ? null : scrollVal}
                     min={0}
-                    max={10}
+                    max={100}
                 />
               </Tooltip>
 
