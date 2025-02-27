@@ -24,7 +24,7 @@ export default defineConfig(async () => ({
       input: {
         main: resolve( __dirname, 'index.html'),
         transpose_monitor_window: resolve( __dirname , "transpose-monitor-window.html"),
-        sheet_viewer_window: resolove( __dirname, "sheet-viewer-window.html")
+        sheet_viewer_window: resolve( __dirname, "sheet-viewer-window.html")
       }
     }
   }
