@@ -61,7 +61,7 @@ function SheetViewerSettings({onUpdate = () => {}}) {
                         <NumericInput
                             onValueChange={(valAsNum, valAsString, el) => zoomConstantHandler(valAsNum)}
                             value={zoomConstant}
-                            min={0.1}
+                            min={0.01}
                             max={10}
                             stepSize={0.1}
                         />

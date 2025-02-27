@@ -8,6 +8,8 @@ import {
 import {Callout, OverlayToaster, Spinner} from "@blueprintjs/core";
 import TransposeMonitor from "./components/TransposeMonitor.jsx";
 import SheetViewerSettings from "./components/SheetViewerSettings.jsx";
+import {invoke} from "@tauri-apps/api";
+import {appWindow} from "@tauri-apps/api/window";
 
 const toaster = OverlayToaster.createAsync({...overlayToasterDefaultProps, position: "top-right"});
 
@@ -84,47 +86,52 @@ function SheetViewer() {
         // note: for macos/safari, clipboard must be accessed synchronously via a transient user action
 
         setLoading(true);
-        if (navigator.clipboard?.read) {
-            const clipboardItems = await navigator.clipboard.read();
-            const lastItem = clipboardItems[clipboardItems.length - 1];
+        try {
+            if (navigator.clipboard?.read) {
+                const clipboardItems = await navigator.clipboard.read();
+                const lastItem = clipboardItems[clipboardItems.length - 1];
 
-            if (["image/png", "image/jpeg", "image/gif"].some(type =>
-                lastItem.types.includes(type))
-            ) {
-                const blob = await lastItem.getType("image/png") ||
-                    await lastItem.getType("image/jpeg") ||
-                    await lastItem.getType("image/gif");
+                if (["image/png", "image/jpeg", "image/gif"].some(type =>
+                    lastItem.types.includes(type))
+                ) {
+                    const blob = await lastItem.getType("image/png") ||
+                        await lastItem.getType("image/jpeg") ||
+                        await lastItem.getType("image/gif");
 
-                processImageContent(blob);
+                    processImageContent(blob);
+                }
+                else if (lastItem.types.includes("text/plain")) {
+                    await processTextContent(lastItem);
+                }
             }
-            else if (lastItem.types.includes("text/plain")) {
-                await processTextContent(lastItem);
+            else if (event.clipboardData?.items) {
+                const items = event.clipboardData.items;
+                const lastItem = items[items.length - 1];
+
+                if (lastItem.type.startsWith("image/")) {
+                    processImageContent(lastItem.getAsFile());
+                }
+                else if (lastItem.type === "text/plain") {
+                    lastItem.getAsString(text => {
+                        if (content) URL.revokeObjectURL(content);
+
+                        setContent(text);
+                        setFilePath(isImageSource(text) ? "pasted_image" : "text");
+                    });
+                }
             }
+            else {
+                setLoading(null)
+                return;
+            }
+
+            setLoading(false);
+            setZoomLevel(0.2);
+            window.scroll(0, 0);
         }
-        else if (event.clipboardData?.items) {
-            const items = event.clipboardData.items;
-            const lastItem = items[items.length - 1];
-
-            if (lastItem.type.startsWith("image/")) {
-                processImageContent(lastItem.getAsFile());
-            }
-            else if (lastItem.type === "text/plain") {
-                lastItem.getAsString(text => {
-                    if (content) URL.revokeObjectURL(content);
-
-                    setContent(text);
-                    setFilePath(isImageSource(text) ? "pasted_image" : "text");
-                });
-            }
-        }
-        else {
+        catch (e) {
             setLoading(null)
-            return;
         }
-
-        setLoading(false);
-        setZoomLevel(0.2);
-        window.scroll(0, 0);
     };
 
     const handleDrop = async (event) => {
@@ -180,6 +187,9 @@ function SheetViewer() {
     }
 
     useEffect(() => {
+        // set decorations to true (transparent bug workaround)
+        appWindow.setDecorations(true).then(r => console.log(r))
+
         const unlisten = listen("sheet_viewer_event", (event) => {
             setData(event.payload)
         })
@@ -230,11 +240,12 @@ function SheetViewer() {
 
     useEffect(() => {
         toastOnPause(toaster, data.paused, data.canTranspose)
+        invoke("set_window_focusable", {focusable: data.paused})
     }, [data.paused]);
 
     return (
         <>
-            <div id={"sheet-viewer-container"} style={{minHeight: "100vh", paddingBottom: 130}}>
+            <div id={"sheet-viewer-container"} style={{minHeight: "100vh", paddingBottom: loading !== null && 130}}>
                 <div style={{display: "flex", justifyContent: "center", overflowX: "hidden", height: "100%"}}>
                     {loading === null
                     ? (
@@ -251,6 +262,7 @@ function SheetViewer() {
                         >
                             <span>Image/Text or Paste the link</span>
                             <span>(.png, .jpg, .jpeg, .gif, .txt)</span>
+                            <span style={{color: "gray", marginTop: 15}}>Pause to Paste (CTRL + V)</span>
                         </Callout>
                     )
                     :

@@ -43,7 +43,8 @@
       },
       "window": {
         "create": true,
-        "setTitle": true
+        "setTitle": true,
+        "setDecorations": true
       },
       "path": {
         "all": true

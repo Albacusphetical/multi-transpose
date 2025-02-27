@@ -104,16 +104,23 @@ unsafe fn transpose_down() {
     send_key(TRANSPOSE_DOWN_BIND.unwrap());
 }
 
-fn apply_non_focusable(window: &tauri::Window) {
+#[tauri::command]
+fn set_window_focusable(window: tauri::Window, focusable: bool) {
     #[cfg(target_os = "windows")]
     {
         if let Ok(hwnd) = window.hwnd() {
             unsafe {
                 let hwnd = windows::HWND(hwnd.0 as isize);
+                let mut style = windows::GetWindowLongPtrW(hwnd, windows::GWL_EXSTYLE);
 
-                let style = windows::GetWindowLongPtrW(hwnd, windows::GWL_EXSTYLE);
+                if focusable {
+                    style &= !(windows::WS_EX_NOACTIVATE.0 as isize);
+                }
+                else {
+                    style |= windows::WS_EX_NOACTIVATE.0 as isize;
+                }
 
-                windows::SetWindowLongPtrW(hwnd, windows::GWL_EXSTYLE, style | windows::WS_EX_NOACTIVATE.0 as isize);
+                windows::SetWindowLongPtrW(hwnd, windows::GWL_EXSTYLE, style);
             }
         }
         else {
@@ -131,7 +138,12 @@ fn apply_non_focusable(window: &tauri::Window) {
     #[cfg(target_os = "linux")]
     {
         if let Some(gtk_window) = window.gtk_window() {
-            linux::gtk_window.set_accept_focus(false);
+            if (focusable) {
+                linux::gtk_window.set_accept_focus(true);
+            }
+            else {
+                linux::gtk_window.set_accept_focus(false);
+            }
         }
     }
 }
@@ -174,6 +186,7 @@ fn main() {
     // gui
     tauri::Builder::default()
         .device_event_filter(tauri::DeviceEventFilter::Always)
+        .invoke_handler(tauri::generate_handler![set_window_focusable])
         .plugin(
             tauri_plugin_sql::Builder::default()
                 // idk why these migrations won't run, these tables will just have to be added from the frontend for now I guess
@@ -185,12 +198,6 @@ fn main() {
             LogTarget::Stdout,
         ]).build())
         .on_window_event(|event| match event.event() {
-            tauri::WindowEvent::Focused(_) => {
-                let window = event.window();
-                if window.label() == "sheet-viewer" || window.label() == "transpose-monitor" {
-                    apply_non_focusable(&window);
-                }
-            }
             tauri::WindowEvent::CloseRequested { api, .. } => {
                 if event.window().label() == "main" {
                     // ensure no windows persist
