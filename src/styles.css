@@ -98,3 +98,10 @@ button {
     background-color: #0f0f0f69;
   }
 }
+
+.user-select {
+  user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -webkit-user-select: none;
+}

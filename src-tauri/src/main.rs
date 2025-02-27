@@ -1,6 +1,36 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+#[cfg(target_os = "windows")]
+mod windows {
+    pub use windows::Win32::UI::WindowsAndMessaging::{SetWindowLongPtrW, GetWindowLongPtrW, GWL_EXSTYLE, WS_EX_NOACTIVATE};
+    pub use windows::Win32::Foundation::HWND;
+}
+
+#[cfg(target_os = "windows")]
+use windows::*;
+
+#[cfg(target_os = "macos")]
+mod macos {
+    pub use cocoa::appkit::NSWindow;
+    pub use cocoa::base::id as id;
+    pub use objc::sel;
+    pub use objc::sel_impl;
+    pub use objc::runtime::NO;
+    pub use objc::msg_send;
+}
+
+#[cfg(target_os = "macos")]
+use macos::*;
+
+#[cfg(target_os = "linux")]
+mod linux {
+    pub use gtk::prelude::*;
+}
+
+#[cfg(target_os = "linux")]
+use linux::*;
+
 mod event_processing;
 mod keyboard;
 mod audio;
@@ -22,6 +52,8 @@ use rdev::listen;
 static mut PAUSED: bool = true;
 static mut CURRENT_TRANSPOSE: i32 = 0;
 static mut SCROLL_VALUE: i64 = 0;
+
+// transposition logic
 
 lazy_static! {
     static ref TRANSPOSES: Mutex<Vec<i32>> = Mutex::new(vec![0]);
@@ -71,6 +103,50 @@ unsafe fn transpose_down() {
     send_key(TRANSPOSE_DOWN_BIND.unwrap());
 }
 
+#[tauri::command]
+fn set_window_focusable(window: tauri::Window, focusable: bool) {
+    #[cfg(target_os = "windows")]
+    {
+        if let Ok(hwnd) = window.hwnd() {
+            unsafe {
+                let hwnd = windows::HWND(hwnd.0 as isize);
+                let mut style = windows::GetWindowLongPtrW(hwnd, windows::GWL_EXSTYLE);
+
+                if focusable {
+                    style &= !(windows::WS_EX_NOACTIVATE.0 as isize);
+                }
+                else {
+                    style |= windows::WS_EX_NOACTIVATE.0 as isize;
+                }
+
+                windows::SetWindowLongPtrW(hwnd, windows::GWL_EXSTYLE, style);
+            }
+        }
+        else {
+            error!("Failed to get window handle");
+        }
+    }
+
+
+    #[cfg(target_os = "macos")]
+    {
+        // not 100% necessary, app windows on macos can stay on top of others if not in fullscreen mode
+        // TODO: consider revisiting this functionality on macos
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        if let Ok(gtk_window) = window.gtk_window() {
+            if (focusable) {
+                gtk_window.set_accept_focus(true);
+            }
+            else {
+                gtk_window.set_accept_focus(false);
+            }
+        }
+    }
+}
+
 fn main() {
     let db_migrations = vec![
         // Define your migrations here
@@ -87,15 +163,18 @@ fn main() {
         // Extract panic message and location
         let message = if let Some(s) = panic_info.payload().downcast_ref::<&str>() {
             s.to_string()
-        } else if let Some(s) = panic_info.payload().downcast_ref::<String>() {
+        }
+        else if let Some(s) = panic_info.payload().downcast_ref::<String>() {
             s.clone()
-        } else {
+        }
+        else {
             "Unknown panic".to_string()
         };
 
         let location = if let Some(location) = panic_info.location() {
             format!("{}:{}", location.file(), location.line())
-        } else {
+        }
+        else {
             "Unknown location".to_string()
         };
 
@@ -106,6 +185,7 @@ fn main() {
     // gui
     tauri::Builder::default()
         .device_event_filter(tauri::DeviceEventFilter::Always)
+        .invoke_handler(tauri::generate_handler![set_window_focusable])
         .plugin(
             tauri_plugin_sql::Builder::default()
                 // idk why these migrations won't run, these tables will just have to be added from the frontend for now I guess

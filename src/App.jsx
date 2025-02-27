@@ -5,7 +5,7 @@ import {useContext, useEffect, useState} from "react";
 import {listen, emit, TauriEvent} from "@tauri-apps/api/event";
 import {
   Button,
-  Card,
+  Card, Divider,
   EditableText,
   InputGroup,
   NumericInput,
@@ -41,9 +41,28 @@ function App() {
   const [canTranspose, setCanTranspose] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [transposeMonitorWebview, setTransposeMonitorWebview] = useState(null)
+  const [sheetViewerWebview, setSheetViewerWebview] = useState(null)
   const [scrollVal, setScrollVal] = useState(Number(window.localStorage.getItem("scrollDownVal")) ?? 0)
 
   const [eventFromBackend, setEventFromBackend] = useState({}) // for debugging
+
+  const spawnSheetViewerWindow = () => {
+      const options = {
+          url: "../sheet-viewer-window.html",
+          title: "Sheet Viewer",
+          alwaysOnTop: true,
+          maximizable: true,
+          resizable: true,
+          focus: false,
+          transparent: true,
+          decorations: false, // set to true using tauri window api on window load (workaround for transparent bug)
+          fileDropEnabled: false,
+          minWidth: 300,
+          minHeight: 200,
+      }
+
+      return spawnWindow('sheet-viewer', options)
+  }
 
   /** @returns {Promise<WebviewWindow>}*/
   const spawnTransposeMonitor = () => {
@@ -53,24 +72,28 @@ function App() {
       alwaysOnTop: true,
       maximizable: false,
       width: 200,
-      height: 75,
+      height: 100,
       maxWidth: 300,
       maxHeight: 200,
       minWidth: 200,
-      minHeight: 75
+      minHeight: 100
     }
 
     return spawnWindow('transpose-monitor', options);
   }
 
-  const getRequiredDataForMonitorWindow = () => {
+  const getRequiredDataForExternalWindows = () => {
     return {keybindConfig, canTranspose, transposes, selectedIndex, paused}
   }
 
-  const sendEventToTransposeMonitor = (event) => {
-    // send event to transpose monitor window, if available
+  const sendEventToExternalWindows = (event) => {
+    // send event to external windows, if available
     if (transposeMonitorWebview !== null) {
       transposeMonitorWebview.emit("transpose_monitor_event", event);
+    }
+
+    if (sheetViewerWebview !== null) {
+      sheetViewerWebview.emit("sheet_viewer_event", event);
     }
   }
 
@@ -159,7 +182,7 @@ function App() {
     if (transposeMonitorWebview !== null) {
       transposeMonitorWebview.once("transpose_monitor_ready", () => {
         // on window ready, send current data it requires
-        transposeMonitorWebview.emit("transpose_monitor_event", getRequiredDataForMonitorWindow())
+        transposeMonitorWebview.emit("transpose_monitor_event", getRequiredDataForExternalWindows())
       })
 
       transposeMonitorWebview.once(TauriEvent.WINDOW_CLOSE_REQUESTED, () => {
@@ -169,7 +192,20 @@ function App() {
   }, [transposeMonitorWebview]);
 
   useEffect(() => {
-    sendEventToTransposeMonitor(getRequiredDataForMonitorWindow())
+      if (sheetViewerWebview !== null) {
+          sheetViewerWebview.once("sheet_viewer_ready", () => {
+              // on window ready, send current data it requires
+              sheetViewerWebview.emit("sheet_viewer_event", getRequiredDataForExternalWindows())
+          })
+
+          sheetViewerWebview.once(TauriEvent.WINDOW_CLOSE_REQUESTED, () => {
+              setSheetViewerWebview(null);
+          })
+      }
+  }, [sheetViewerWebview]);
+
+  useEffect(() => {
+    sendEventToExternalWindows(getRequiredDataForExternalWindows())
   }, [keybindConfig, canTranspose, transposes, selectedIndex, paused]);
 
   useEffect(() => {
@@ -193,17 +229,35 @@ function App() {
           </Tooltip>
         </span>
 
-        <Tooltip content={"View transposes while playing"}>
-          <Button
-              disabled={!canTranspose}
-              onClick={async () => {
-                const webview = await spawnTransposeMonitor();
-                setTransposeMonitorWebview(webview)
-              }}
-          >
-            Spawn Monitor
-          </Button>
-        </Tooltip>
+        <div style={{display: "flex", gap: 10, justifyContent: "center"}}>
+          <span style={{display: "flex", alignItems: "center"}}>Tools</span>
+          <Divider />
+          <Tooltip content={"See sheets while playing"}>
+              <Button
+                  disabled={!canTranspose}
+                  icon={"search-template"}
+                  onClick={async () => {
+                      const webview = await spawnSheetViewerWindow();
+                      setSheetViewerWebview(webview)
+                  }}
+              >
+                  Sheet Viewer
+              </Button>
+          </Tooltip>
+
+          <Tooltip content={"View transposes while playing"}>
+            <Button
+                disabled={!canTranspose}
+                icon={"desktop"}
+                onClick={async () => {
+                  const webview = await spawnTransposeMonitor();
+                  setTransposeMonitorWebview(webview)
+                }}
+            >
+              Monitor
+            </Button>
+          </Tooltip>
+        </div>
 
         <span className={"transposes-header"}>
           <div className={"transpose-helper-items"}>
@@ -232,7 +286,7 @@ function App() {
                     onValueChange={(valAsNum, valAsString, el) => setScrollVal(~~valAsNum)}
                     value={keybindConfig.config?.scroll_down?.value == null ? null : scrollVal}
                     min={0}
-                    max={10}
+                    max={100}
                 />
               </Tooltip>
 

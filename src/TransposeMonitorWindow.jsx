@@ -7,8 +7,8 @@ import {
     toastOnPause
 } from "./utils.js";
 import {OverlayToaster} from "@blueprintjs/core";
-import TransposeMatrixItem from "./components/TransposeMatrixItem.jsx";
-import BlankTransposeMatrixItem from "./components/BlankTransposeMatrixItem.jsx";
+import TransposeMonitor from "./components/TransposeMonitor.jsx";
+
 
 const monitorToaster = OverlayToaster.createAsync({...overlayToasterDefaultProps, position: "bottom"});
 
@@ -20,49 +20,6 @@ function TransposeMonitorWindow() {
         canTranspose: undefined,
         keybindConfig: undefined,
     });
-
-    const PrevTransposeItem = () => {
-        if (data?.selectedIndex === undefined || data?.transposes === undefined) return <BlankTransposeMatrixItem/>
-
-        const index = (data.selectedIndex + data.transposes.length - 1) % data.transposes.length;
-        const transpose = data.transposes[index];
-
-        return (
-            index !== data.selectedIndex && transpose !== undefined
-                ?
-                <TransposeMatrixItem index={index} transpose={transpose} selected={false} />
-                :
-                <BlankTransposeMatrixItem/>
-        )
-    }
-
-    const CurrentTransposeItem = () => {
-        if (data?.selectedIndex === undefined || data?.transposes === undefined) return <BlankTransposeMatrixItem/>
-
-        const transpose = data.transposes[data.selectedIndex];
-
-        return (
-            transpose !== undefined
-                ?
-                <TransposeMatrixItem index={data.selectedIndex} transpose={transpose} selected={true} />
-                :
-                <BlankTransposeMatrixItem/>
-        )    }
-
-    const NextTransposeItem = () => {
-        if (data?.selectedIndex === undefined || data?.transposes === undefined) return <BlankTransposeMatrixItem/>
-
-        const index = (data.selectedIndex + 1) % data.transposes.length;
-        const transpose = data.transposes[index];
-
-        return (
-            index !== data.selectedIndex && transpose !== undefined
-                ?
-                <TransposeMatrixItem index={index} transpose={transpose} selected={false} />
-                :
-                <BlankTransposeMatrixItem/>
-        )
-    }
 
     useEffect(() => {
         const unlisten = listen("transpose_monitor_event", (event) => {
@@ -93,11 +50,7 @@ function TransposeMonitorWindow() {
 
     return (
         <div className={"container"}>
-            <span className={"transposes-monitor transpose-matrix-content"}>
-                <PrevTransposeItem/>
-                <CurrentTransposeItem/>
-                <NextTransposeItem/>
-            </span>
+            <TransposeMonitor data={data} />
         </div>
     )
 }

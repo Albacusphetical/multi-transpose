@@ -160,3 +160,93 @@
     width: 55px!important;
     margin-right: 5px;
 }
+
+.sheet-viewer-footer {
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    text-align: center;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    padding: 3px;
+    margin-top: 15px;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+}
+
+.sheet-viewer-footer > .transposes-monitor {
+    width: 333px;
+}
+
+.transpose-monitor-sheet-viewer {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+}
+
+.sheet-viewer-footer {
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    padding: 3px;
+    margin-top: 15px;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+}
+
+.transposes-monitor-sheet-viewer {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.transposes-monitor-sheet-viewer > .transposes-monitor {
+    justify-content: center;
+    gap: 20px;
+}
+
+#sheet-viewer-settings-button {
+    position: relative;
+    right: 5vw;
+    cursor: pointer;
+    color: gray;
+}
+
+#sheet-viewer-settings-button:hover {
+    color: lightgray;
+}
+
+#sheet-viewer-settings-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 60px;
+    color: black;
+    gap: 20px;
+    z-index: -1;
+}
+
+#sheet-viewer-settings {
+    .bp5-drawer {
+        overflow-y: auto;
+        -ms-overflow-y: auto;
+    }
+
+    .bp5-drawer-header {
+        position: fixed;
+        width: 100%;
+        background: white;
+    }
+}
