@@ -8,11 +8,13 @@ Any-to-any transposition for VP, go from transpose X to Y instantly.
 
 Cross-platform and compatible with websites and games that allow you to transpose with your keyboard.
 
-Now with new scroll by keybind feature introduced in version 1.2.8!
+Now with Sheet Viewer introduced in 1.3.1! 
+View your image/text sheet on top of your music app, with an adjustable see-through background, and more precise zoom!
+Play your sheets maximized on Windows, Linux, or on top of your music app window on MacOS!
 
 [Install](https://github.com/Albacusphetical/multi-transpose/tree/main?tab=readme-ov-file#installation)
 
-[![multi-transpose-showcase](https://github.com/user-attachments/assets/eda3aaae-aea3-4ff5-a94c-ac19d7b0dab2)
+[![multi-transpose-showcase](https://github.com/user-attachments/assets/d1adba69-6f8a-4811-83e0-acfbce8ba231))
 ](https://github.com/Albacusphetical/multi-transpose/releases/latest)
 
 Check out this [converter](https://github.com/ArijanJ/midi-converter) if you want to create multi-transpose sheets and copy and paste in transposes.
