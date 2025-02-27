@@ -25,8 +25,7 @@ use macos::*;
 
 #[cfg(target_os = "linux")]
 mod linux {
-    pub use gtk::gdk::WindowExt;
-    pub use tauri::WindowExtGtk;
+    pub use gtk::prelude::*;
 }
 
 #[cfg(target_os = "linux")]
@@ -137,12 +136,12 @@ fn set_window_focusable(window: tauri::Window, focusable: bool) {
 
     #[cfg(target_os = "linux")]
     {
-        if let Some(gtk_window) = window.gtk_window() {
+        if let Ok(gtk_window) = window.gtk_window() {
             if (focusable) {
-                linux::gtk_window.set_accept_focus(true);
+                gtk_window.set_accept_focus(true);
             }
             else {
-                linux::gtk_window.set_accept_focus(false);
+                gtk_window.set_accept_focus(false);
             }
         }
     }
