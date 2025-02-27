@@ -5,7 +5,7 @@ import {
     preventRefreshOnKeydownCallback,
     toastOnPause
 } from "./utils.js";
-import {Callout, OverlayToaster, Spinner} from "@blueprintjs/core";
+import {Callout, OverlayToaster, Spinner, Tag} from "@blueprintjs/core";
 import TransposeMonitor from "./components/TransposeMonitor.jsx";
 import SheetViewerSettings from "./components/SheetViewerSettings.jsx";
 import {invoke} from "@tauri-apps/api";
@@ -262,7 +262,9 @@ function SheetViewer() {
                         >
                             <span>Image/Text or Paste the link</span>
                             <span>(.png, .jpg, .jpeg, .gif, .txt)</span>
-                            <span style={{color: "gray", marginTop: 15}}>Pause to Paste (CTRL + V)</span>
+                            <span style={{color: "dimgray", marginTop: 15}}>
+                                <Tag minimal={true}>Pause All Binds</Tag> to Paste (CTRL + V)
+                            </span>
                         </Callout>
                     )
                     :

@@ -5,7 +5,7 @@ import {useContext, useEffect, useState} from "react";
 import {listen, emit, TauriEvent} from "@tauri-apps/api/event";
 import {
   Button,
-  Card,
+  Card, Divider,
   EditableText,
   InputGroup,
   NumericInput,
@@ -229,29 +229,35 @@ function App() {
           </Tooltip>
         </span>
 
-      <Tooltip content={"Use sheet on top while playing"}>
-          <Button
-              disabled={!canTranspose}
-              onClick={async () => {
-                  const webview = await spawnSheetViewerWindow();
-                  setSheetViewerWebview(webview)
-              }}
-          >
-              Sheet Viewer
-          </Button>
-      </Tooltip>
+        <div style={{display: "flex", gap: 10, justifyContent: "center"}}>
+          <span style={{display: "flex", alignItems: "center"}}>Tools</span>
+          <Divider />
+          <Tooltip content={"See sheets while playing"}>
+              <Button
+                  disabled={!canTranspose}
+                  icon={"search-template"}
+                  onClick={async () => {
+                      const webview = await spawnSheetViewerWindow();
+                      setSheetViewerWebview(webview)
+                  }}
+              >
+                  Sheet Viewer
+              </Button>
+          </Tooltip>
 
-        <Tooltip content={"View transposes while playing"}>
-          <Button
-              disabled={!canTranspose}
-              onClick={async () => {
-                const webview = await spawnTransposeMonitor();
-                setTransposeMonitorWebview(webview)
-              }}
-          >
-            Spawn Monitor
-          </Button>
-        </Tooltip>
+          <Tooltip content={"View transposes while playing"}>
+            <Button
+                disabled={!canTranspose}
+                icon={"desktop"}
+                onClick={async () => {
+                  const webview = await spawnTransposeMonitor();
+                  setTransposeMonitorWebview(webview)
+                }}
+            >
+              Monitor
+            </Button>
+          </Tooltip>
+        </div>
 
         <span className={"transposes-header"}>
           <div className={"transpose-helper-items"}>
