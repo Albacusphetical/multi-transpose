@@ -55,7 +55,7 @@ function App() {
           alwaysOnTop: true,
           maximizable: true,
           resizable: true,
-          focus: false,
+          focus: true,
           transparent: true,
           decorations: false, // set to true using tauri window api on window load (workaround for transparent bug)
           fileDropEnabled: false,

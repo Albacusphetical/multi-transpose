@@ -322,14 +322,22 @@ function SheetViewer() {
                                 display: "flex",
                                 flexDirection: "column",
                                 justifyContent: "center",
+                                alignItems: "center",
                                 textAlign: "center",
                                 background: "rgb(200, 200, 200)"
                             }}
                         >
                             <span>Image/Text or Paste the link</span>
                             <span>(.png, .jpg, .jpeg, .gif, .txt)</span>
-                            <span style={{color: "dimgray", marginTop: 15}}>
-                                <Tag minimal={true}>Pause All Binds</Tag> to take control of the window
+
+                            <Icon
+                                style={{marginTop: 25, marginBottom: 5}}
+                                icon={"info-sign"}
+                                size={IconSize.LARGE}
+                                color={"gray"}
+                            />
+                            <span style={{color: "dimgray"}}>
+                               <Tag minimal={true}>Pause All Binds</Tag> to take control of the window
                             </span>
                         </Callout>
                     )
