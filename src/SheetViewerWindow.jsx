@@ -292,6 +292,8 @@ function SheetViewer() {
         else {
             document.documentElement.style.color = "white"
             body.style.color = "white"
+
+            if (!data.paused) appWindow.setIgnoreCursorEvents(true)
         }
 
         setIsContentHidden(false)
