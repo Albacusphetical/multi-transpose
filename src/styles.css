@@ -105,3 +105,7 @@ button {
   -ms-user-select: none;
   -webkit-user-select: none;
 }
+
+.display-none {
+  display: none;
+}

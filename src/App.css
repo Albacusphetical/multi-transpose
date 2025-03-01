@@ -118,7 +118,15 @@
     top: 5px;
     margin: 25px;
     max-width: 75vw;
-    background: ghostwhite;
+    padding: 5px;
+}
+
+.sheet-viewer-transpose-input > .transpose-input {
+    position: fixed;
+    top: unset;
+    bottom: 60px;
+    margin: 25px;
+    max-width: 75vw;
     padding: 5px;
 }
 
@@ -209,11 +217,13 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    gap: 15px
 }
 
 .transposes-monitor-sheet-viewer > .transposes-monitor {
     justify-content: center;
     gap: 20px;
+    width: unset;
 }
 
 #sheet-viewer-settings-button {
@@ -249,4 +259,36 @@
         width: 100%;
         background: white;
     }
+}
+
+#file-display-container {
+    display: flex;
+    justify-content: center;
+    height: 100%;
+    width: fit-content;
+    align-items: center;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#sheet-visibility {
+    color: gray;
+}
+
+#sheet-visibility:hover {
+    cursor: pointer;
+    color: lightgrey;
+}
+
+#zoom-info {
+    background: rgba(150, 150, 150, 0.9);
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: fit-content;
+    height: fit-content;
+    pointer-events: none;
+    color: whitesmoke;
 }

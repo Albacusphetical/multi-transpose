@@ -44,7 +44,12 @@
       "window": {
         "create": true,
         "setTitle": true,
-        "setDecorations": true
+        "setDecorations": true,
+        "maximize": true,
+        "unmaximize": true,
+        "setSize": true,
+        "setPosition": true,
+        "setIgnoreCursorEvents": true
       },
       "path": {
         "all": true

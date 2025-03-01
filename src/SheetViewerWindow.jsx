@@ -1,15 +1,16 @@
 import {useEffect, useState} from "react";
 import {emit, listen} from "@tauri-apps/api/event";
 import {
-    overlayToasterDefaultProps, preventCaretOnKeydownCallback,
+    overlayToasterDefaultProps, preventCaretOnKeydownCallback, preventDefaultEventCallback,
     preventRefreshOnKeydownCallback,
     toastOnPause
 } from "./utils.js";
-import {Callout, OverlayToaster, Spinner, Tag} from "@blueprintjs/core";
+import {Callout, Icon, IconSize, OverlayToaster, Spinner, Tag} from "@blueprintjs/core";
 import TransposeMonitor from "./components/TransposeMonitor.jsx";
 import SheetViewerSettings from "./components/SheetViewerSettings.jsx";
 import {invoke} from "@tauri-apps/api";
-import {appWindow} from "@tauri-apps/api/window";
+import {appWindow, LogicalPosition, LogicalSize, WebviewWindow} from "@tauri-apps/api/window";
+import TransposeInput from "./components/TransposeInput.jsx";
 
 const toaster = OverlayToaster.createAsync({...overlayToasterDefaultProps, position: "top-right"});
 
@@ -22,16 +23,36 @@ function SheetViewer() {
         keybindConfig: undefined,
     });
 
+    const mainWindow = WebviewWindow.getByLabel("main") // for communicating transposes
+
     const [loading, setLoading] = useState(null)
     const [filePath, setFilePath] = useState("")
     const [content, setContent] = useState()
+    const [isContentHidden, setIsContentHidden] = useState(false)
     const [zoomLevel, setZoomLevel] = useState(0.1);
-    const [zoomConstant, setZoomConstant] = useState(0.01);
+    const [zoomStepSize, setZoomStepSize] = useState(0.01);
 
-    const zoomIn = () => setZoomLevel(prev => prev + zoomConstant);
-    const zoomOut = () => setZoomLevel(prev =>
-        prev - zoomConstant >= 0.2 ? prev - zoomConstant : prev
-    );
+    const zoomIn = () => {
+        showZoomInfo()
+        setZoomLevel(prev => prev + zoomStepSize);
+    }
+    const zoomOut = () => {
+        showZoomInfo()
+        setZoomLevel(prev =>
+            prev - zoomStepSize >= 0.2 ? prev - zoomStepSize : prev
+        );
+    }
+
+    const showZoomInfo = () => {
+        const zoomInfoEl = document.getElementById("zoom-info")
+
+        if (zoomInfoEl.classList.contains("display-none")) {
+            zoomInfoEl.classList.remove("display-none")
+            setTimeout(() => {
+                zoomInfoEl.classList.add("display-none")
+            }, 1000)
+        }
+    }
 
     const handleZoomWheelEvent = (event) => {
         if (event.ctrlKey) {
@@ -186,13 +207,44 @@ function SheetViewer() {
         return filePath === "pasted_image" || filePath.endsWith(".png") || filePath.endsWith(".jpg") || filePath.endsWith(".jpeg") || filePath.endsWith(".gif")
     }
 
+    const resetWindowDecorations = async () => {
+        await appWindow.setDecorations(false)
+        await appWindow.setDecorations(true)
+    }
+
     useEffect(() => {
         // set decorations to true (transparent bug workaround)
-        appWindow.setDecorations(true).then(r => console.log(r))
+        resetWindowDecorations()
+
 
         const unlisten = listen("sheet_viewer_event", (event) => {
             setData(event.payload)
         })
+
+        // const customMaximize = async () => {
+        //     try {
+        //         await appWindow.maximize();
+        //
+        //         const maximizedSize = await appWindow.outerSize();
+        //
+        //         await appWindow.unmaximize();
+        //
+        //         const newWidth = maximizedSize.width;
+        //         const newHeight = maximizedSize.height - 10;
+        //         await appWindow.setSize(new LogicalSize(newWidth, newHeight));
+        //
+        //         await appWindow.setPosition(new LogicalPosition(0, 0));
+        //     }
+        //     catch (error) {
+        //         console.error('Failed to resize or reposition the window:', error);
+        //     }
+        // };
+
+        const unlistenResize = appWindow.onResized(async () => {
+            // if (await appWindow.isMaximized()) {
+            //     await customMaximize();
+            // }
+        });
 
         // signal this window is ready for data
         emit("sheet_viewer_ready", null);
@@ -207,6 +259,9 @@ function SheetViewer() {
         window.addEventListener('wheel', handleZoomWheelEvent);
         window.addEventListener('keydown', handleZoomKeydownEvent);
 
+        // prevent context menu for zoom out
+        window.addEventListener("contextmenu", preventDefaultEventCallback);
+
         // drag & drop / clipboard listeners
         document.addEventListener("dragover", handleDragover)
         document.addEventListener("dragleave", handleDragleave)
@@ -215,6 +270,7 @@ function SheetViewer() {
 
         return () => {
             unlisten.then(cleanFn => cleanFn());
+            unlistenResize.then(cleanFn => cleanFn())
             removeEventListener("dragover", handleDragover)
             removeEventListener("dragleave", handleDragleave)
             removeEventListener("drop", handleDrop)
@@ -222,6 +278,7 @@ function SheetViewer() {
             removeEventListener('keydown', preventRefreshOnKeydownCallback);
             removeEventListener('keydown', preventCaretOnKeydownCallback);
             removeEventListener('wheel', handleZoomWheelEvent)
+            removeEventListener("contextmenu", preventDefaultEventCallback)
             removeEventListener('keydown', handleZoomKeydownEvent)
         }
     }, []);
@@ -236,17 +293,26 @@ function SheetViewer() {
             document.documentElement.style.color = "white"
             body.style.color = "white"
         }
+
+        setIsContentHidden(false)
     }, [loading])
 
     useEffect(() => {
         toastOnPause(toaster, data.paused, data.canTranspose)
         invoke("set_window_focusable", {focusable: data.paused})
+
+        if (loading === null || data.paused) {
+            appWindow.setIgnoreCursorEvents(false)
+        }
+        else {
+            appWindow.setIgnoreCursorEvents(true)
+        }
     }, [data.paused]);
 
     return (
         <>
             <div id={"sheet-viewer-container"} style={{minHeight: "100vh", paddingBottom: loading !== null && 130}}>
-                <div style={{display: "flex", justifyContent: "center", overflowX: "hidden", height: "100%"}}>
+                <div id={"file-display-container"} style={{width: loading !== null ? "fit-content" : "100%"}}>
                     {loading === null
                     ? (
                         <Callout
@@ -256,14 +322,22 @@ function SheetViewer() {
                                 display: "flex",
                                 flexDirection: "column",
                                 justifyContent: "center",
+                                alignItems: "center",
                                 textAlign: "center",
                                 background: "rgb(200, 200, 200)"
                             }}
                         >
                             <span>Image/Text or Paste the link</span>
                             <span>(.png, .jpg, .jpeg, .gif, .txt)</span>
-                            <span style={{color: "dimgray", marginTop: 15}}>
-                                <Tag minimal={true}>Pause All Binds</Tag> to Paste (CTRL + V)
+
+                            <Icon
+                                style={{marginTop: 25, marginBottom: 5}}
+                                icon={"info-sign"}
+                                size={IconSize.LARGE}
+                                color={"gray"}
+                            />
+                            <span style={{color: "dimgray"}}>
+                               <Tag minimal={true}>Pause All Binds</Tag> to take control of the window
                             </span>
                         </Callout>
                     )
@@ -272,10 +346,12 @@ function SheetViewer() {
                         ? <Spinner style={{height: "100vh"}}/>
                     : (
                         <div>
-                            {/*<Callout>Zoom {1 + zoomLevel.toFixed(2)}</Callout>*/}
+                            <Callout id={"zoom-info"} className={"display-none"}>
+                                x{(1 + zoomLevel - 0.2).toFixed(2)}
+                            </Callout>
                             <div
                                 id="fileViewer"
-                                className={"user-select"}
+                                className={`user-select ${isContentHidden && "display-none"}`}
                                 style={{background: "#2d2a32", cursor: "zoom-in"}}
                                 onClick={zoomIn}
                                 onContextMenu={zoomOut}
@@ -301,11 +377,35 @@ function SheetViewer() {
                         </div>
                     )}
                 </div>
+
+                {loading === false && data.paused &&
+                    <span className={"sheet-viewer-transpose-input"}>
+                        <TransposeInput
+                            toaster={toaster}
+                            mainWindowTransposes={data.transposes}
+                            canTranspose={true}
+                            backend={false}
+                            onUpdate={(transposes) => {
+                                // transfer it to the main window, which will go update its transposes input, updating the backend
+                                if (JSON.stringify(data?.transposes ?? "[]") != JSON.stringify(transposes))
+                                    mainWindow.emit("sheet-viewer", {transposes})
+                            }}
+                        />
+                    </span>
+                }
+
             </div>
+
 
             {loading !== null &&
                 <div className="sheet-viewer-footer">
                     <div className={"transposes-monitor-sheet-viewer"}>
+                        <Icon
+                            id={"sheet-visibility"}
+                            icon={isContentHidden ? "eye-open" : "eye-off"}
+                            size={IconSize.STANDARD}
+                            onClick={() => {setIsContentHidden(!isContentHidden)}}
+                        />
                         <TransposeMonitor data={data}/>
                     </div>
 
@@ -317,8 +417,8 @@ function SheetViewer() {
                                document.body.style.background = background
                            }
 
-                           if (settings?.zoomConstant !== undefined) {
-                               setZoomConstant(settings.zoomConstant)
+                           if (settings?.zoomStepSize !== undefined) {
+                               setZoomStepSize(settings.zoomStepSize)
                            }
                         }}
                     />
