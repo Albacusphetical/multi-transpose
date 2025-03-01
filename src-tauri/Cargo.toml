@@ -10,7 +10,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tauri = { version = "1.5", features = [ "window-set-decorations", "macos-private-api", "clipboard-all", "window-set-title", "fs-exists", "path-all", "fs-write-file", "fs-read-file", "updater", "window-create", "shell-open"] }
+tauri = { version = "1.5", features = [ "window-set-ignore-cursor-events", "window-set-position", "window-set-size", "window-maximize", "window-unmaximize", "window-set-decorations", "macos-private-api", "clipboard-all", "window-set-title", "fs-exists", "path-all", "fs-write-file", "fs-read-file", "updater", "window-create", "shell-open"] }
 tauri-plugin-sql = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1", features = ["sqlite"] }
 tauri-plugin-log = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
 log = "^0.4"

@@ -1,12 +1,12 @@
 import pkg from "../package.json";
 import "./App.css";
 import {WebviewWindow} from "@tauri-apps/api/window";
-import {useContext, useEffect, useState} from "react";
+import {useContext, useEffect, useRef, useState} from "react";
 import {listen, emit, TauriEvent} from "@tauri-apps/api/event";
 import {
   Button,
   Card, Divider,
-  EditableText,
+  EditableText, Icon, IconSize,
   InputGroup,
   NumericInput,
   OverlayToaster,
@@ -29,6 +29,7 @@ import {
   toastOnPause
 } from "./utils.js";
 import Volume from "./components/Volume.jsx";
+import TransposeInput from "./components/TransposeInput.jsx";
 
 export const appToaster = OverlayToaster.createAsync(overlayToasterDefaultProps);
 
@@ -37,6 +38,7 @@ function App() {
   const [keybindManagerIsListening, setKeybindManagerIsListening] = useState(false);
   const [keybindConfig, setKeybindConfig] = useState({});
   const [paused, setIsPaused] = useState(true);
+  const transposesInputRef = useRef()
   const [transposes, setTransposes] = useState([]);
   const [canTranspose, setCanTranspose] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -57,7 +59,7 @@ function App() {
           transparent: true,
           decorations: false, // set to true using tauri window api on window load (workaround for transparent bug)
           fileDropEnabled: false,
-          minWidth: 300,
+          minWidth: 320,
           minHeight: 200,
       }
 
@@ -97,39 +99,6 @@ function App() {
     }
   }
 
-  const getTransposesFromText = (text) => {
-    const regex = /-?\d+/g;
-    const matches = text.match(regex);
-
-    return matches ? matches.map(match => parseInt(match, 10)) : [];
-  }
-
-  const sendTransposesHandler = (transposes) => {
-    if (!transposes || transposes.length === 0) {
-      return;
-    }
-
-    // limited from -50 to 50
-    if (!transposes.every(num => num >= -50 && num <= 50)) {
-      appToaster.then(toaster => {
-        toaster.clear();
-
-        toaster.show({
-          ...generalAppToastConfig,
-          message: "Transposes must not exceed or fall below -/+50",
-          icon: "numerical",
-          intent: "danger",
-          timeout: 2000,
-          isCloseButtonShown: true
-        })
-      })
-
-      return;
-    }
-
-    emit("backend_event", {transposes});
-    setTransposes(transposes);
-  }
 
   useEffect(() => {
     const unlisten = listen("frontend_event", (event) => {
@@ -159,6 +128,12 @@ function App() {
       setEventFromBackend(event)
     })
 
+    const unlistenSheetViewer = listen("sheet-viewer", (event) => {
+        transposesInputRef.current.value = event.payload.transposes.join(" ")
+        emit("backend_event", event.payload)
+        setTransposes(event.payload.transposes)
+    })
+
     // prevents window refresh
     document.addEventListener('keydown', preventRefreshOnKeydownCallback);
     document.addEventListener('contextmenu', preventDefaultEventCallback);
@@ -168,6 +143,7 @@ function App() {
 
     return () => {
       unlisten.then((cleanFn) => cleanFn());
+      unlistenSheetViewer.then((cleanFn) => cleanFn());
       removeEventListener('keydown', preventRefreshOnKeydownCallback);
       removeEventListener('contextmenu', preventDefaultEventCallback);
       removeEventListener('keydown', preventCaretOnKeydownCallback);
@@ -216,18 +192,7 @@ function App() {
   return (
     isDatabaseReady &&
       <div className={"container"}>
-        <span className={"transpose-input"}>
-          <Tooltip defaultIsOpen={true} content={canTranspose ? "Example: 0 -1 +1 1" : "Keybinds must be set first!"}>
-            <InputGroup
-                id={"transposes-input"}
-                onInput={(e) => sendTransposesHandler(getTransposesFromText(e.target.value))}
-                disabled={!canTranspose}
-                fill={true}
-                leftIcon={"array-numeric"}
-                placeholder={"Enter your transposes"}
-            />
-          </Tooltip>
-        </span>
+        <TransposeInput ref={transposesInputRef} toaster={appToaster} canTranspose={canTranspose} onUpdate={setTransposes}/>
 
         <div style={{display: "flex", gap: 10, justifyContent: "center"}}>
           <span style={{display: "flex", alignItems: "center"}}>Tools</span>
@@ -269,27 +234,20 @@ function App() {
             </a>
 
             <div style={{display: "flex"}}>
-              <Tooltip
-                  content={
-                    !canTranspose
-                      ?
-                      "Set your main keybinds before use!"
-                      :
-                      keybindConfig.config?.scroll_down?.value == null ? `Set "Scroll" in the Keybinds menu to use!` : ""
-                  }
-              >
-                <NumericInput
-                    disabled={keybindConfig.config?.scroll_down?.value == null}
-                    inputClassName={"scroll-amount"}
-                    buttonPosition={"left"}
-                    placeholder={"Scroll"}
-                    onValueChange={(valAsNum, valAsString, el) => setScrollVal(~~valAsNum)}
-                    value={keybindConfig.config?.scroll_down?.value == null ? null : scrollVal}
-                    min={0}
-                    max={100}
-                />
-              </Tooltip>
-
+                <span style={{display: "flex", alignItems: "center", gap: 10}}>
+                  <Icon icon={"sort"} size={IconSize.LARGE} color={"gray"}/>
+                  <p style={{color: "gray", marginTop: "auto", marginBottom: "auto"}}>Scroll</p>
+                  <NumericInput
+                      disabled={keybindConfig.config?.scroll_down?.value == null}
+                      inputClassName={"scroll-amount"}
+                      buttonPosition={"left"}
+                      placeholder={"Scroll"}
+                      onValueChange={(valAsNum, valAsString, el) => setScrollVal(~~valAsNum)}
+                      value={keybindConfig.config?.scroll_down?.value == null ? null : scrollVal}
+                      min={0}
+                      max={100}
+                  />
+                </span>
               <Volume/>
             </div>
           </div>
