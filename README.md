@@ -14,9 +14,8 @@ Play your sheets maximized on Windows, Linux, or on top of your music app window
 
 [Install](https://github.com/Albacusphetical/multi-transpose/tree/main?tab=readme-ov-file#installation)
 
-[![multi-transpose-showcase](https://github.com/user-attachments/assets/114eaf24-4c04-4ac3-a6f2-5e34128d6def))
+[![multi-transpose-showcase](https://github.com/user-attachments/assets/30d788e8-7a0d-4feb-8866-56e34cecd57a))
 ](https://github.com/Albacusphetical/multi-transpose/releases/latest)
-
 
 
 Check out this [converter](https://github.com/ArijanJ/midi-converter) if you want to create multi-transpose sheets and copy and paste in transposes.
