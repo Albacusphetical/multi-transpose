@@ -29,6 +29,7 @@ function SheetViewer() {
     const [filePath, setFilePath] = useState("")
     const [content, setContent] = useState()
     const [isContentHidden, setIsContentHidden] = useState(false)
+    const [isTransposesInputHidden, setIsTransposesInputHidden] = useState(true)
     const [zoomLevel, setZoomLevel] = useState(0.1);
     const [zoomStepSize, setZoomStepSize] = useState(0.01);
 
@@ -105,6 +106,11 @@ function SheetViewer() {
 
     const handlePaste = async (event) => {
         // note: for macos/safari, clipboard must be accessed synchronously via a transient user action
+
+        if (document.getElementById("transposes-input")?.ariaExpanded === "true") {
+            // transpose input focused
+            return;
+        }
 
         setLoading(true);
         try {
@@ -292,8 +298,13 @@ function SheetViewer() {
         else {
             document.documentElement.style.color = "white"
             body.style.color = "white"
+        }
 
-            if (!data.paused) appWindow.setIgnoreCursorEvents(true)
+        if (!data.paused) {
+            appWindow.setIgnoreCursorEvents(false)
+        }
+        else {
+            appWindow.setIgnoreCursorEvents(true)
         }
 
         setIsContentHidden(false)
@@ -301,13 +312,16 @@ function SheetViewer() {
 
     useEffect(() => {
         toastOnPause(toaster, data.paused, data.canTranspose)
-        invoke("set_window_focusable", {focusable: data.paused})
+        // invoke("set_window_focusable", {focusable: data.paused})
 
-        if (loading === null || data.paused) {
+        if (loading === null) {
             appWindow.setIgnoreCursorEvents(false)
         }
-        else {
+        else if (data.paused) {
             appWindow.setIgnoreCursorEvents(true)
+        }
+        else {
+            appWindow.setIgnoreCursorEvents(false)
         }
     }, [data.paused]);
 
@@ -339,7 +353,7 @@ function SheetViewer() {
                                 color={"gray"}
                             />
                             <span style={{color: "dimgray"}}>
-                               <Tag minimal={true}>Pause All Binds</Tag> to take control of the window
+                               <Tag minimal={true}>Pause All Binds</Tag> to enable click-through
                             </span>
                         </Callout>
                     )
@@ -380,7 +394,7 @@ function SheetViewer() {
                     )}
                 </div>
 
-                {loading === false && data.paused &&
+                {isTransposesInputHidden && loading !== null &&
                     <span className={"sheet-viewer-transpose-input"}>
                         <TransposeInput
                             toaster={toaster}
@@ -403,12 +417,19 @@ function SheetViewer() {
                 <div className="sheet-viewer-footer">
                     <div className={"transposes-monitor-sheet-viewer"}>
                         <Icon
-                            id={"sheet-visibility"}
+                            className={"sheet-viewer-visibility-btn"}
                             icon={isContentHidden ? "eye-open" : "eye-off"}
                             size={IconSize.STANDARD}
                             onClick={() => {setIsContentHidden(!isContentHidden)}}
                         />
                         <TransposeMonitor data={data}/>
+                        <Icon
+                            className={"sheet-viewer-visibility-btn"}
+                            icon={"array-numeric"}
+                            size={IconSize.STANDARD}
+                            color={isTransposesInputHidden && "black"}
+                            onClick={() => setIsTransposesInputHidden(!isTransposesInputHidden)}
+                        />
                     </div>
 
                     <SheetViewerSettings

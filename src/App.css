@@ -271,11 +271,11 @@
     margin-right: auto;
 }
 
-#sheet-visibility {
+.sheet-viewer-visibility-btn {
     color: gray;
 }
 
-#sheet-visibility:hover {
+.sheet-viewer-visibility-btn:hover {
     cursor: pointer;
     color: lightgrey;
 }
