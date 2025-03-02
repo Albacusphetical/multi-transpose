@@ -49,7 +49,8 @@
         "unmaximize": true,
         "setSize": true,
         "setPosition": true,
-        "setIgnoreCursorEvents": true
+        "setIgnoreCursorEvents": true,
+        "setFocus": true
       },
       "path": {
         "all": true

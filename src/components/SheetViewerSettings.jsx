@@ -1,7 +1,7 @@
 import {Drawer, Icon, IconSize, NumericInput, Position, Slider, Text} from "@blueprintjs/core";
 import {useEffect, useState} from "react";
 
-function SheetViewerSettings({onUpdate = () => {}}) {
+function SheetViewerSettings({onUpdate = () => {}, isOpen = () => {}}) {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false)
     const [transparency, setTransparency] = useState(Number(window.localStorage.getItem("transparency")) ?? 50)
     const [zoomStepSize, setZoomStepSize] = useState(Number(
@@ -15,6 +15,7 @@ function SheetViewerSettings({onUpdate = () => {}}) {
     }
 
     const zoomStepSizeHandler = (val) => {
+        if (val === undefined) return;
         setZoomStepSize(val)
         window.localStorage.setItem("zoomStepSize", val)
         onUpdate({zoomStepSize: val})
@@ -23,6 +24,10 @@ function SheetViewerSettings({onUpdate = () => {}}) {
     useEffect(() => {
         onUpdate({transparency: transparency, zoomStepSize: zoomStepSize})
     }, []);
+
+    useEffect(() => {
+        isOpen(isSettingsOpen)
+    }, [isSettingsOpen])
 
     return (
         <span id={"sheet-viewer-settings"}>
@@ -61,6 +66,7 @@ function SheetViewerSettings({onUpdate = () => {}}) {
                     <span>
                         <p>Zoom Step Size</p>
                         <NumericInput
+                            id={"zoom-step"}
                             onValueChange={(valAsNum, valAsString, el) => zoomStepSizeHandler(valAsNum)}
                             value={zoomStepSize}
                             min={0.01}

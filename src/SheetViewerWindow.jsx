@@ -5,7 +5,7 @@ import {
     preventRefreshOnKeydownCallback,
     toastOnPause
 } from "./utils.js";
-import {Callout, Icon, IconSize, OverlayToaster, Spinner, Tag} from "@blueprintjs/core";
+import {Callout, Icon, IconSize, OverlayToaster, Spinner, Tag, Tooltip} from "@blueprintjs/core";
 import TransposeMonitor from "./components/TransposeMonitor.jsx";
 import SheetViewerSettings from "./components/SheetViewerSettings.jsx";
 import {invoke} from "@tauri-apps/api";
@@ -26,6 +26,9 @@ function SheetViewer() {
     const mainWindow = WebviewWindow.getByLabel("main") // for communicating transposes
 
     const [loading, setLoading] = useState(null)
+    const [isWindowFocused, setIsWindowFocused] = useState(true)
+    const [isInKeyboardArea, setIsInKeyboardArea] = useState(true);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [filePath, setFilePath] = useState("")
     const [content, setContent] = useState()
     const [isContentHidden, setIsContentHidden] = useState(false)
@@ -40,7 +43,7 @@ function SheetViewer() {
     const zoomOut = () => {
         showZoomInfo()
         setZoomLevel(prev =>
-            prev - zoomStepSize >= 0.2 ? prev - zoomStepSize : prev
+            prev - zoomStepSize >= 0.2 ? prev - zoomStepSize : 0.2
         );
     }
 
@@ -218,10 +221,20 @@ function SheetViewer() {
         await appWindow.setDecorations(true)
     }
 
+    const setClickthrough = async (enabled) => {
+        if (enabled) {
+            await appWindow.setIgnoreCursorEvents(true)
+        }
+        else {
+            await appWindow.setIgnoreCursorEvents(false)
+        }
+
+        invoke("set_window_focusable", {focusable: isWindowFocused})
+    }
+
     useEffect(() => {
         // set decorations to true (transparent bug workaround)
         resetWindowDecorations()
-
 
         const unlisten = listen("sheet_viewer_event", (event) => {
             setData(event.payload)
@@ -291,6 +304,7 @@ function SheetViewer() {
 
     useEffect(() => {
         const body = document.getElementById("sheet-viewer-body")
+
         if (loading === null) {
             document.documentElement.color = "black"
             body.style.color = "black";
@@ -298,13 +312,14 @@ function SheetViewer() {
         else {
             document.documentElement.style.color = "white"
             body.style.color = "white"
+            setIsInKeyboardArea(false)
         }
 
         if (!data.paused) {
-            appWindow.setIgnoreCursorEvents(false)
+            setClickthrough(false)
         }
         else {
-            appWindow.setIgnoreCursorEvents(true)
+            setClickthrough(true)
         }
 
         setIsContentHidden(false)
@@ -312,18 +327,55 @@ function SheetViewer() {
 
     useEffect(() => {
         toastOnPause(toaster, data.paused, data.canTranspose)
-        // invoke("set_window_focusable", {focusable: data.paused})
-
         if (loading === null) {
-            appWindow.setIgnoreCursorEvents(false)
+            setClickthrough(false)
         }
         else if (data.paused) {
-            appWindow.setIgnoreCursorEvents(true)
+            setClickthrough(true)
         }
         else {
-            appWindow.setIgnoreCursorEvents(false)
+            setClickthrough(false)
         }
     }, [data.paused]);
+
+    useEffect(() => {
+        invoke("set_window_focusable", {focusable: isWindowFocused})
+    }, [isWindowFocused])
+
+    useEffect(() => {
+        if (isInKeyboardArea) {
+            invoke("set_window_focusable", {focusable: true})
+            appWindow.setFocus(true)
+        }
+        else {
+            invoke("set_window_focusable", {focusable: isWindowFocused})
+        }
+    }, [isInKeyboardArea])
+
+    const keyboardAreaUseEffect = (elementId, reactOn, condition) => {
+        useEffect(() => {
+            const focusIn = (e) => {
+                setIsInKeyboardArea(true)
+            }
+
+            const focusOut = (e) => {
+                setIsInKeyboardArea(false)
+            }
+
+            if (condition) {
+                document.getElementById(elementId).addEventListener("focusin", focusIn)
+                document.getElementById(elementId).addEventListener("focusout", focusOut)
+            }
+
+            return () => {
+                document.getElementById(elementId)?.removeEventListener("focusin", focusIn)
+                document.getElementById(elementId)?.removeEventListener("focusOut", focusOut)
+            }
+        }, [reactOn])
+    }
+
+    keyboardAreaUseEffect("transposes-input", isTransposesInputHidden, !isTransposesInputHidden)
+    keyboardAreaUseEffect("zoom-step", isSettingsOpen, isSettingsOpen)
 
     return (
         <>
@@ -394,7 +446,7 @@ function SheetViewer() {
                     )}
                 </div>
 
-                {isTransposesInputHidden && loading !== null &&
+                {!isTransposesInputHidden && loading !== null &&
                     <span className={"sheet-viewer-transpose-input"}>
                         <TransposeInput
                             toaster={toaster}
@@ -416,23 +468,45 @@ function SheetViewer() {
             {loading !== null &&
                 <div className="sheet-viewer-footer">
                     <div className={"transposes-monitor-sheet-viewer"}>
-                        <Icon
-                            className={"sheet-viewer-visibility-btn"}
-                            icon={isContentHidden ? "eye-open" : "eye-off"}
-                            size={IconSize.STANDARD}
-                            onClick={() => {setIsContentHidden(!isContentHidden)}}
-                        />
+                        <span style={{display: "flex", flexDirection: "column", gap: 5}}>
+                            <Icon
+                                className={"sheet-viewer-visibility-btn"}
+                                icon={isContentHidden ? "eye-open" : "eye-off"}
+                                size={IconSize.STANDARD}
+                                onClick={() => {setIsContentHidden(!isContentHidden)}}
+                            />
+                            <Tooltip
+                                content={
+                                    isWindowFocused
+                                    ?
+                                    "Unfocus: to allow clicking on this window without taking away focus from other apps"
+                                    :
+                                    "Focus: for pasting, editing transposes or settings in this window"
+                                }
+                                compact={true}
+                                usePortal={false}
+                            >
+                                <Icon
+                                    className={"sheet-viewer-visibility-btn"}
+                                    icon={"locate"}
+                                    size={IconSize.STANDARD}
+                                    color={isWindowFocused ? "red" : isInKeyboardArea ? "#2d72d2" : null}
+                                    onClick={() => setIsWindowFocused(!isWindowFocused)}
+                                />
+                            </Tooltip>
+                        </span>
                         <TransposeMonitor data={data}/>
                         <Icon
                             className={"sheet-viewer-visibility-btn"}
                             icon={"array-numeric"}
                             size={IconSize.STANDARD}
-                            color={isTransposesInputHidden && "black"}
+                            color={!isTransposesInputHidden && "black"}
                             onClick={() => setIsTransposesInputHidden(!isTransposesInputHidden)}
                         />
                     </div>
 
                     <SheetViewerSettings
+                        isOpen={setIsSettingsOpen}
                         onUpdate={(settings) => {
                            if (settings?.transparency !== undefined) {
                                const background = `rgba(0, 0, 0, ${1 - settings.transparency / 10})`

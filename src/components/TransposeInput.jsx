@@ -59,7 +59,7 @@ const TransposeInput = forwardRef(
         }, [ref]);
 
         useEffect(() => {
-            if (!backend) inputRef.current.value = mainWindowTransposes?.join(" ");
+            if (!backend) inputRef.current.value = mainWindowTransposes?.join(" ") ?? "";
         }, [mainWindowTransposes]);
 
         return (
