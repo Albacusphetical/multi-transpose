@@ -29,7 +29,7 @@ See our [Usage Guide](https://github.com/Albacusphetical/multi-transpose/wiki/Us
 
 ### Windows:
 
-[Download](https://github.com/Albacusphetical/multi-transpose/releases/latest) the installer ([.exe](https://github.com/Albacusphetical/multi-transpose/releases/download/v1.3.4/multi-transpose_1.3.4_x64-setup.exe)) for the latest release. 
+[Download](https://github.com/Albacusphetical/multi-transpose/releases/latest) the installer ([.exe](https://github.com/Albacusphetical/multi-transpose/releases/download/v1.3.5/multi-transpose_1.3.5_x64-setup.exe)) for the latest release. 
 
 Open and run the installer, it may say the app is unsafe, however nothing is wrong with this, this is because it presses the transpose up/down keys for you as an example, you can verify this for yourself in the code above.
 
@@ -39,7 +39,7 @@ If you see this, press "more info", then press "run anyway" to start installing.
 
 ### Linux:
 
-[Download](https://github.com/Albacusphetical/multi-transpose/releases/latest) the installer ([.AppImage](https://github.com/Albacusphetical/multi-transpose/releases/download/v1.3.4/multi-transpose_1.3.4_amd64.AppImage)/[.deb](https://github.com/Albacusphetical/multi-transpose/releases/download/v1.3.4/multi-transpose_1.3.4_amd64.deb)) for the latest release. 
+[Download](https://github.com/Albacusphetical/multi-transpose/releases/latest) the installer ([.AppImage](https://github.com/Albacusphetical/multi-transpose/releases/download/v1.3.5/multi-transpose_1.3.5_amd64.AppImage)/[.deb](https://github.com/Albacusphetical/multi-transpose/releases/download/v1.3.5/multi-transpose_1.3.5_amd64.deb)) for the latest release. 
 
 *There are only instructions here for .AppImage, feel free to message me if you'd like to create instructions for .deb*
 
@@ -50,7 +50,7 @@ Once you have downloaded the .AppImage file, go to the file, right-click and go 
 
 ### MacOS:
 
-[Download](https://github.com/Albacusphetical/multi-transpose/releases/latest) the installer ([.dmg](https://github.com/Albacusphetical/multi-transpose/releases/download/v1.3.4/multi-transpose_1.3.4_x64.dmg)) for the latest release.
+[Download](https://github.com/Albacusphetical/multi-transpose/releases/latest) the installer ([.dmg](https://github.com/Albacusphetical/multi-transpose/releases/download/v1.3.5/multi-transpose_1.3.5_x64.dmg)) for the latest release.
 
 Open the .dmg file first, if you see something like the following:
 
