@@ -245,7 +245,7 @@ function App() {
                       onValueChange={(valAsNum, valAsString, el) => setScrollVal(~~valAsNum)}
                       value={keybindConfig.config?.scroll_down?.value == null ? null : scrollVal}
                       min={0}
-                      max={100}
+                      max={200}
                   />
                 </span>
               <Volume/>
