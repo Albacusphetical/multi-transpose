@@ -66,7 +66,7 @@ function App() {
       return spawnWindow('sheet-viewer', options)
   }
 
-  /** @returns {Promise<WebviewWindow>}*/
+  /** @returns {Promise<WebviewWindow>}*/ 
   const spawnTransposeMonitor = () => {
     const options = {
       url: '../transpose-monitor-window.html',
