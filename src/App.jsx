@@ -138,7 +138,7 @@ function App() {
     document.addEventListener('keydown', preventRefreshOnKeydownCallback);
     document.addEventListener('contextmenu', preventDefaultEventCallback);
 
-    // prevents caret
+    // prevents caret 
     document.addEventListener('keydown', preventCaretOnKeydownCallback);
 
     return () => {
