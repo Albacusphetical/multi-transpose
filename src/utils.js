@@ -73,28 +73,38 @@ export const preventDefaultEventCallback = (event) => {
 }
 /****/
 
-export const getAppDataSettings = async () => {
+export const getAppDataFilePath = async (filename) => {
     const dataDir = await appDataDir();
-    const settingsPath = `${dataDir}settings.json`
-    const settingsExists = await exists(settingsPath);
+    return `${dataDir}${filename}`
+}
 
-    if (!settingsExists) {
-        await writeTextFile(settingsPath, JSON.stringify(defaultAppDataSettings))
-        return defaultAppDataSettings;
+export const getJSONFile = async (filename, defaultData = {}) => {
+    const appDataFilePath = await getAppDataFilePath(filename)
+    const fileExists = await exists(appDataFilePath)
+
+    if (!fileExists) {
+        await writeTextFile(appDataFilePath, JSON.stringify(defaultData))
+        return defaultData
     }
 
-    const contents = await readTextFile(`${dataDir}settings.json`);
+    const contents = await readTextFile(filename)
 
     return JSON.parse(contents)
 }
 
+export const writeJSONFile = async (filename, data = {}) => {
+    const appDataFilePath = await getAppDataFilePath(filename)
+    const currData = await getJSONFile(filename)
+
+    await writeTextFile(appDataFilePath, JSON.stringify({...currData, ...data}));
+}
+
+export const getAppDataSettings = async () => {
+    return getJSONFile("settings.json", defaultAppDataSettings)
+}
+
 export const writeAppDataSettings = async (jsonObj) => {
-    const dataDir = await appDataDir();
-    const settingsPath = `${dataDir}settings.json`
-
-    const settings = await getAppDataSettings()
-
-    await writeTextFile(settingsPath, JSON.stringify({...settings, ...jsonObj}));
+    await writeJSONFile("settings.json", jsonObj)
 }
 
 export function modOrDefault(num, divisor) {
