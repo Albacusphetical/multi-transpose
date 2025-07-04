@@ -1,4 +1,4 @@
-import {getJSONFile} from "../../utils/fileUtils.js";
+import {getJSONFile, writeJSONFile} from "../../utils/fileUtils.js";
 
 const SETTINGS_FILE = "settings.json"
 
@@ -9,5 +9,5 @@ export const getAppDataSettings = async () => {
 }
 
 export const writeAppDataSettings = async (jsonObj) => {
-    await writeJSaONFile(SETTINGS_FILE, jsonObj)
+    await writeJSONFile(SETTINGS_FILE, jsonObj)
 }
