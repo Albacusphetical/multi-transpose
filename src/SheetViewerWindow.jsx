@@ -4,7 +4,7 @@ import {
     overlayToasterDefaultProps, preventCaretOnKeydownCallback, preventDefaultEventCallback,
     preventRefreshOnKeydownCallback,
     toastOnPause
-} from "./utils.js";
+} from "./utils/generalUtils.js";
 import {Callout, Icon, IconSize, OverlayToaster, Spinner, Tag, Tooltip} from "@blueprintjs/core";
 import TransposeMonitor from "./components/TransposeMonitor.jsx";
 import SheetViewerSettings from "./components/SheetViewerSettings.jsx";

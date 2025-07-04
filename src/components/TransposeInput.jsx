@@ -1,5 +1,5 @@
 import {InputGroup, Tooltip} from "@blueprintjs/core";
-import {generalAppToastConfig} from "../utils.js";
+import {generalAppToastConfig} from "../utils/generalUtils.js";
 import {emit} from "@tauri-apps/api/event";
 import {forwardRef, useEffect, useRef, useState} from "react";
 

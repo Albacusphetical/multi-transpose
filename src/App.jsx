@@ -27,7 +27,7 @@ import {
   preventRefreshOnKeydownCallback,
   spawnWindow,
   toastOnPause
-} from "./utils.js";
+} from "./utils/generalUtils.js";
 import Volume from "./components/Volume.jsx";
 import TransposeInput from "./components/TransposeInput.jsx";
 

@@ -1,7 +1,7 @@
 import {Button, Slider, Tooltip} from "@blueprintjs/core";
 import {useEffect, useState} from "react";
 import {emit} from "@tauri-apps/api/event";
-import {defaultAppDataSettings, getAppDataSettings, writeAppDataSettings} from "../utils.js";
+import {defaultAppDataSettings, getAppDataSettings, writeAppDataSettings} from "../services/storage/settingsService.js";
 
 const Volume = () => {
     const [muted, setMuted] = useState(defaultAppDataSettings.muted);

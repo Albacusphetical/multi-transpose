@@ -5,7 +5,7 @@ import {
     preventDefaultEventCallback,
     preventRefreshOnKeydownCallback,
     toastOnPause
-} from "./utils.js";
+} from "./utils/generalUtils.js";
 import {OverlayToaster} from "@blueprintjs/core";
 import TransposeMonitor from "./components/TransposeMonitor.jsx";
 
