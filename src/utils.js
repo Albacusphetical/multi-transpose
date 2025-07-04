@@ -73,11 +73,6 @@ export const preventDefaultEventCallback = (event) => {
 }
 /****/
 
-export const getAppDataFilePath = async (filename) => {
-    const dataDir = await appDataDir();
-    return `${dataDir}${filename}`
-}
-
 export const getJSONFile = async (filename, defaultData = {}) => {
     const appDataFilePath = await getAppDataFilePath(filename)
     const fileExists = await exists(appDataFilePath)
@@ -87,7 +82,7 @@ export const getJSONFile = async (filename, defaultData = {}) => {
         return defaultData
     }
 
-    const contents = await readTextFile(filename)
+    const contents = await readTextFile(appDataFilePath)
 
     return JSON.parse(contents)
 }
@@ -95,8 +90,12 @@ export const getJSONFile = async (filename, defaultData = {}) => {
 export const writeJSONFile = async (filename, data = {}) => {
     const appDataFilePath = await getAppDataFilePath(filename)
     const currData = await getJSONFile(filename)
-
     await writeTextFile(appDataFilePath, JSON.stringify({...currData, ...data}));
+}
+
+export const getAppDataFilePath = async (filename) => {
+    const dataDir = await appDataDir();
+    return `${dataDir}${filename}`
 }
 
 export const getAppDataSettings = async () => {
@@ -106,6 +105,8 @@ export const getAppDataSettings = async () => {
 export const writeAppDataSettings = async (jsonObj) => {
     await writeJSONFile("settings.json", jsonObj)
 }
+
+
 
 export function modOrDefault(num, divisor) {
     const result = num % divisor;
