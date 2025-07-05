@@ -33,6 +33,7 @@ function SheetViewerSettings({onUpdate = () => {}, isOpen = () => {}}) {
         <span id={"sheet-viewer-settings"}>
             <Icon
                 id={"sheet-viewer-settings-button"}
+                className={"sheet-viewer-footer-side-button"}
                 icon={"settings"}
                 size={IconSize.LARGE}
                 onClick={() => setIsSettingsOpen(true)}

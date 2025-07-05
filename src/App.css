@@ -227,13 +227,20 @@
 }
 
 #sheet-viewer-settings-button {
-    position: relative;
     right: 5vw;
+}
+
+#sheet-viewer-sheets-portal-button {
+    left: 5vw;
+}
+
+.sheet-viewer-footer-side-button {
+    position: relative;
     cursor: pointer;
     color: gray;
 }
 
-#sheet-viewer-settings-button:hover {
+.sheet-viewer-footer-side-button:hover {
     color: lightgray;
 }
 

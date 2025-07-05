@@ -11,6 +11,7 @@ import SheetViewerSettings from "./components/SheetViewerSettings.jsx";
 import {invoke} from "@tauri-apps/api";
 import {appWindow, LogicalPosition, LogicalSize, WebviewWindow} from "@tauri-apps/api/window";
 import TransposeInput from "./components/TransposeInput.jsx";
+import SheetViewerSheetsPortal from "./components/SheetViewerSheetsPortal.jsx";
 
 const toaster = OverlayToaster.createAsync({...overlayToasterDefaultProps, position: "top-right"});
 
@@ -377,6 +378,14 @@ function SheetViewer() {
     keyboardAreaUseEffect("transposes-input", isTransposesInputHidden, !isTransposesInputHidden)
     keyboardAreaUseEffect("zoom-step", isSettingsOpen, isSettingsOpen)
 
+    /*
+    * button on the left, store by title and labels (optional)
+    * search by title/labels
+    * search must be able to use both the arijan api and what is stored locally
+    *
+    * search results will always initially display what is stored locally first then any sheets with multi transpose label from arijan
+    * */
+
     return (
         <>
             <div id={"sheet-viewer-container"} style={{minHeight: "100vh", paddingBottom: loading !== null && 130}}>
@@ -467,6 +476,7 @@ function SheetViewer() {
 
             {loading !== null &&
                 <div className="sheet-viewer-footer">
+                    <SheetViewerSheetsPortal/>
                     <div className={"transposes-monitor-sheet-viewer"}>
                         <span style={{display: "flex", flexDirection: "column", gap: 5}}>
                             <Icon

@@ -59,7 +59,7 @@ function App() {
           transparent: true,
           decorations: false, // set to true using tauri window api on window load (workaround for transparent bug)
           fileDropEnabled: false,
-          minWidth: 320,
+          minWidth: 350,
           minHeight: 200,
       }
 
