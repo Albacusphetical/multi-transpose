@@ -459,7 +459,7 @@ function SheetViewer() {
                     <span className={"sheet-viewer-transpose-input"}>
                         <TransposeInput
                             toaster={toaster}
-                            mainWindowTransposes={data.transposes}
+                            parentWindowTransposes={data.transposes}
                             canTranspose={true}
                             backend={false}
                             onUpdate={(transposes) => {
@@ -476,7 +476,11 @@ function SheetViewer() {
 
             {loading !== null &&
                 <div className="sheet-viewer-footer">
-                    <SheetViewerSheetsPortal/>
+                    <SheetViewerSheetsPortal
+                        toaster={toaster}
+                        canTranspose={data.canTranspose}
+                        transposes={data.transposes}
+                    />
                     <div className={"transposes-monitor-sheet-viewer"}>
                         <span style={{display: "flex", flexDirection: "column", gap: 5}}>
                             <Icon

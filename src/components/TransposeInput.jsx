@@ -7,10 +7,11 @@ const TransposeInput = forwardRef(
     (
         {
             toaster,
-            mainWindowTransposes = null,
+            parentWindowTransposes = null,
             canTranspose,
             backend = true,
             onUpdate = () => {},
+            disabled = false
         },
         ref
     ) => {
@@ -24,7 +25,7 @@ const TransposeInput = forwardRef(
         };
 
         const sendTransposesHandler = (transposes) => {
-            if (!transposes || transposes.length === 0 || transposes === mainWindowTransposes) {
+            if (!transposes || transposes.length === 0 || transposes === parentWindowTransposes) {
                 return;
             }
 
@@ -59,8 +60,8 @@ const TransposeInput = forwardRef(
         }, [ref]);
 
         useEffect(() => {
-            if (!backend) inputRef.current.value = mainWindowTransposes?.join(" ") ?? "";
-        }, [mainWindowTransposes]);
+            if (!backend) inputRef.current.value = parentWindowTransposes?.join(" ") ?? "";
+        }, [parentWindowTransposes]);
 
         return (
             <span className={"transpose-input"}>
@@ -71,7 +72,7 @@ const TransposeInput = forwardRef(
                   <InputGroup
                       id={"transposes-input"}
                       onInput={(e) => sendTransposesHandler(getTransposesFromText(e.target.value))}
-                      disabled={!canTranspose}
+                      disabled={!disabled && !canTranspose}
                       fill={true}
                       leftIcon={"array-numeric"}
                       placeholder={"Enter your transposes"}

@@ -17,6 +17,6 @@ export const writeSheetData = async (data) => {
     // const sheetsExists = await exists(sheetsPath)
 
     // depending on the sheet saved, we would need to create either a text or image file
-    console.log(data)
+    console.log(sheetsPath, data)
     // writeSheetRefs(data)
 }
