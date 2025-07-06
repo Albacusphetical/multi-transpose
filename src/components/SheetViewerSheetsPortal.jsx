@@ -18,10 +18,10 @@ function SheetViewerSheetsPortal({sheetData, toaster, transposes, onChange = () 
             dateModified: date.toISOString(),
             title: saveEditTitle ?? "N/A",
             labels: saveEditLabels,
-            transposes: saveEditTransposes,
+            transposes: saveEditTransposes.length > 0 ? saveEditTransposes : [0],
         }
 
-        await writeSheetData(sheetData, metadata)
+        await writeSheetData({sheetData, metadata})
 
         onChange(metadata)
 
@@ -72,6 +72,7 @@ function SheetViewerSheetsPortal({sheetData, toaster, transposes, onChange = () 
             >
                 <Button onClick={() => setIsModifyOpen(true)}></Button>
                 <Dialog
+                    className={"sheets-save"}
                     title={"Save/Edit"}
                     icon={"document-share"}
                     usePortal={true}

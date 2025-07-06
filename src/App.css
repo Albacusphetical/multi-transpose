@@ -121,6 +121,15 @@
     padding: 5px;
 }
 
+.sheets-save > .transpose-input {
+    position: unset;
+    top: unset;
+    margin: unset;
+    max-width: unset;
+    padding: unset;
+}
+
+
 .sheet-viewer-transpose-input > .transpose-input {
     position: fixed;
     top: unset;

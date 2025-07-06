@@ -13,10 +13,15 @@ const writeSheetRefs = async (jsonObj) => {
 }
 
 export const writeSheetData = async (data) => {
-    const sheetsPath = getAppDataFilePath("sheets/")
-    // const sheetsExists = await exists(sheetsPath)
+    const sheetsPath = await getAppDataFilePath("sheets/")
 
     // depending on the sheet saved, we would need to create either a text or image file
     console.log(sheetsPath, data)
-    // writeSheetRefs(data)
+
+    if (!data?.sheetData) {
+        // save the transposes without the sheet
+    }
+    else {
+
+    }
 }
