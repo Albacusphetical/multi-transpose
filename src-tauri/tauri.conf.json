@@ -58,9 +58,12 @@
       "fs": {
         "readFile": true,
         "writeFile": true,
+        "createDir": true,
         "exists": true,
         "scope": [
-          "$APPDATA/settings.json",
+          "$APPDATA/*",
+          "$APPDATA/sheets/*",
+          "$APPDATA/sheets",
           "$RESOURCE/*"
         ]
       },

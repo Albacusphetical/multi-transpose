@@ -11,7 +11,7 @@ export const getJSONFile = async (filename, defaultData = {}) => {
     const fileExists = await exists(appDataFilePath)
 
     if (!fileExists) {
-        await writeTextFile(appDataFilePath, JSON.stringify(defaultData))
+        await writeTextFile(appDataFilePath, JSON.stringify(defaultData, null, 2))
         return defaultData
     }
 
@@ -24,4 +24,8 @@ export const writeJSONFile = async (filename, data = {}) => {
     const appDataFilePath = await getAppDataFilePath(filename)
     const currData = await getJSONFile(filename)
     await writeTextFile(appDataFilePath, JSON.stringify({...currData, ...data}));
+}
+
+export const sanitizeFileName = (fileName) => {
+    return fileName.replace(/[\/:*?"<>|]/g, "_"); // Replace invalid characters with '_'
 }

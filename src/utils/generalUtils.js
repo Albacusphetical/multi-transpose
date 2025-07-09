@@ -74,3 +74,34 @@ export function modOrDefault(num, divisor) {
     return isNaN(result) ? 0 : result;
 }
 
+export const formatDateForCard = (isoString) => {
+    const date = new Date(isoString);
+    const now = new Date();
+
+    const isToday = date.toDateString() === now.toDateString();
+
+    const yesterday = new Date();
+    yesterday.setDate(now.getDate() - 1);
+    const isYesterday = date.toDateString() === yesterday.toDateString();
+
+    const timeString = date.toLocaleTimeString(undefined, {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,  // 24-hour format
+    });
+
+    if (isToday) {
+        return `Today ${timeString}`;
+    }
+    else if (isYesterday) {
+        return `Yesterday ${timeString}`;
+    }
+    else {
+        const dateString = date.toLocaleDateString(undefined, {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+        });
+        return `${dateString} ${timeString}`;
+    }
+}

@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {emit, listen} from "@tauri-apps/api/event";
 import {
     overlayToasterDefaultProps, preventCaretOnKeydownCallback, preventDefaultEventCallback,
@@ -25,6 +25,7 @@ function SheetViewer() {
     });
 
     const mainWindow = WebviewWindow.getByLabel("main") // for communicating transposes
+    const sheetPortalRef = useRef()
 
     const [loading, setLoading] = useState(null)
     const [isWindowFocused, setIsWindowFocused] = useState(true)
@@ -93,9 +94,24 @@ function SheetViewer() {
         return urlPattern.test(str) || base64Pattern.test(str);
     }
 
-    const processTextContent = async (item) => {
-        const text = await item.getType("text/plain");
-        const textData = await text.text();
+    const resetView = () => {
+        setLoading(false);
+        setZoomLevel(0.2);
+        window.scroll(0, 0);
+    }
+
+    const processTextContent = async (item, txt = null) => {
+        let text;
+        let textData;
+
+        if (!txt) {
+            text = await item.getType("text/plain");
+            textData = await text.text();
+        }
+        else {
+            textData = txt
+        }
+
         if (content) URL.revokeObjectURL(content);
 
         if (isImageSource(textData)) {
@@ -156,9 +172,7 @@ function SheetViewer() {
                 return;
             }
 
-            setLoading(false);
-            setZoomLevel(0.2);
-            window.scroll(0, 0);
+            resetView()
         }
         catch (e) {
             setLoading(null)
@@ -192,9 +206,8 @@ function SheetViewer() {
                 setContent(URL.createObjectURL(file));
                 setFilePath("pasted_image");
             }
-            setLoading(false);
-            setZoomLevel(0.2);
-            window.scroll(0, 0);
+
+            resetView()
         }
         else {
             setLoading(null)
@@ -477,12 +490,25 @@ function SheetViewer() {
             {loading !== null &&
                 <div className="sheet-viewer-footer">
                     <SheetViewerSheetsPortal
+                        ref={sheetPortalRef}
                         toaster={toaster}
                         canTranspose={data.canTranspose}
                         transposes={data.transposes}
+                        sheetData={{
+                            content,
+                            type: isImageSource(content) ? "image-link" : (content?.startsWith("blob:") ? "image" : "text")
+                        }}
+                        onChange={(sheet) => {
+                            setLoading(true)
+                            mainWindow.emit("sheet-viewer", {transposes: sheet.transposes})
+
+                            if (sheet?.url) processTextContent(null, sheet.url)
+
+                            resetView()
+                        }}
                     />
                     <div className={"transposes-monitor-sheet-viewer"}>
-                        <span style={{display: "flex", flexDirection: "column", gap: 5}}>
+                        <span className={"sheet-viewer-footer-buttons-col"}>
                             <Icon
                                 className={"sheet-viewer-visibility-btn"}
                                 icon={isContentHidden ? "eye-open" : "eye-off"}
@@ -509,14 +535,26 @@ function SheetViewer() {
                                 />
                             </Tooltip>
                         </span>
+
                         <TransposeMonitor data={data}/>
-                        <Icon
-                            className={"sheet-viewer-visibility-btn"}
-                            icon={"array-numeric"}
-                            size={IconSize.STANDARD}
-                            color={!isTransposesInputHidden && "black"}
-                            onClick={() => setIsTransposesInputHidden(!isTransposesInputHidden)}
-                        />
+
+                        <span className={"sheet-viewer-footer-buttons-col"} style={{gap: 8}}>
+                            <Icon
+                                className={"sheet-viewer-visibility-btn"}
+                                icon={"array-numeric"}
+                                size={IconSize.STANDARD}
+                                color={!isTransposesInputHidden && "black"}
+                                onClick={() => setIsTransposesInputHidden(!isTransposesInputHidden)}
+                            />
+
+                            <Icon
+                                className={"sheet-viewer-visibility-btn"}
+                                icon={"document-share"}
+                                size={IconSize.STANDARD}
+                                onClick={() => sheetPortalRef.current?.openModifyDialog()}
+                            />
+                        </span>
+
                     </div>
 
                     <SheetViewerSettings

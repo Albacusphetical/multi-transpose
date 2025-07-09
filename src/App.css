@@ -129,6 +129,9 @@
     padding: unset;
 }
 
+.sheets-save > .transpose-input > .bp5-popover-target {
+    display: unset;
+}
 
 .sheet-viewer-transpose-input > .transpose-input {
     position: fixed;
@@ -137,6 +140,25 @@
     margin: 25px;
     max-width: 75vw;
     padding: 5px;
+}
+
+.sheet-viewer-footer-buttons-col {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.sheets-portal-sheet-card {
+    color: black;
+}
+
+.sheets-portal-icon-button {
+    opacity: 0.4;
+    transition: opacity 0.2s ease;
+}
+
+.sheets-portal-icon-button:hover {
+    opacity: 1;
 }
 
 #monitor-body {
