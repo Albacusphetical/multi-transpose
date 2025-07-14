@@ -23,6 +23,7 @@ export const getJSONFile = async (filename, defaultData = {}) => {
 export const writeJSONFile = async (filename, data = {}) => {
     const appDataFilePath = await getAppDataFilePath(filename)
     const currData = await getJSONFile(filename)
+
     await writeTextFile(appDataFilePath, JSON.stringify({...currData, ...data}));
 }
 

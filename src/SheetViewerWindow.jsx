@@ -12,6 +12,9 @@ import {invoke} from "@tauri-apps/api";
 import {appWindow, LogicalPosition, LogicalSize, WebviewWindow} from "@tauri-apps/api/window";
 import TransposeInput from "./components/TransposeInput.jsx";
 import SheetViewerSheetsPortal from "./components/SheetViewerSheetsPortal.jsx";
+import {readTextFile, readBinaryFile} from "@tauri-apps/api/fs";
+import {appDataDir} from "@tauri-apps/api/path";
+import {fileTypeFromBuffer} from "file-type";
 
 const toaster = OverlayToaster.createAsync({...overlayToasterDefaultProps, position: "top-right"});
 
@@ -498,11 +501,26 @@ function SheetViewer() {
                             content,
                             type: isImageSource(content) ? "image-link" : (content?.startsWith("blob:") ? "image" : "text")
                         }}
-                        onChange={(sheet) => {
+                        onChange={async (sheet) => {
                             setLoading(true)
                             mainWindow.emit("sheet-viewer", {transposes: sheet.transposes})
 
                             if (sheet?.url) processTextContent(null, sheet.url)
+                            else if (sheet?.path) {
+                                const dataPath = await appDataDir()
+                                if (sheet.path.endsWith(".txt")) {
+                                    const text = await readTextFile(`${dataPath}${sheet.path}`)
+                                    processTextContent(null, text)
+                                }
+                                else {
+                                    const bytes = await readBinaryFile(`${dataPath}${sheet.path}`);
+
+                                    const fileType = await fileTypeFromBuffer(bytes)
+                                    const blob = new Blob([new Uint8Array(bytes)], { type: fileType.mime });
+
+                                    processImageContent(blob)
+                                }
+                            }
 
                             resetView()
                         }}

@@ -10,24 +10,34 @@ import {
     CardList,
     Card, EntityTitle, Tag
 } from "@blueprintjs/core";
-import {forwardRef, useEffect, useImperativeHandle, useState} from "react";
+import {forwardRef, useEffect, useImperativeHandle, useRef, useState} from "react";
 import TransposeInput from "./TransposeInput.jsx";
 import {formatDateForCard, generalAppToastConfig} from "../utils/generalUtils.js";
 import {deleteSheetData, getSheetRefs, writeSheetData} from "../services/storage/sheetStorageService.js";
 
 const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, onChange = () => {} }, ref) => {
-    // TODO: properly set up editing for each sheet
     const [activeId, setActiveId] = useState(undefined)
     const [isPortalOpen, setIsPortalOpen] = useState(false)
     const [isModifyOpen, setIsModifyOpen] = useState(false)
     const [saveEditTitle, setSaveEditTitle] = useState(undefined)
     const [saveEditLabels, setSaveEditLabels] = useState([])
     const [saveEditTransposes, setSaveEditTransposes] = useState([])
+    const saveEditTitleRef = useRef(null)
+    const saveEditLabelsRef = useRef(null)
+    const saveEditTransposesRef = useRef()
+    const [sheetSelected, setSheetSelected] = useState()
 
-    const [localSheets, setLocalSheets] = useState([])
+    const [localSheets, setLocalSheets] = useState({})
 
     useImperativeHandle(ref, () => ({
-        openModifyDialog: () => setIsModifyOpen(true)
+        openModifyDialog: () => {
+            if (sheetSelected) {
+                setIsModifyOpen({id: sheetSelected.id})
+            }
+            else {
+                setIsModifyOpen(true)
+            }
+        }
     }));
 
     const handleSave = async (id = null) => {
@@ -44,10 +54,11 @@ const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, on
         if (id) metadata.id = id
 
         const sheet = await writeSheetData({sheetData, metadata})
-        localSheets.push(sheet)
+        localSheets[sheet.id] = sheet
         setActiveId(sheet.id)
 
         onChange(sheet)
+        setSheetSelected(sheet)
 
         toaster.then((toaster) => {
             toaster.clear();
@@ -70,6 +81,7 @@ const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, on
     }
 
     const sortedLocalSheets = (localSheets, activeIndex) => {
+        localSheets = Object.values(localSheets)
         if (!Array.isArray(localSheets)) return [];
 
         const hasValidIndex =
@@ -90,20 +102,41 @@ const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, on
         return sorted;
     };
 
+    const setupEditDialogInputs = (sheet) => {
+        setTimeout(() => {
+            saveEditTitleRef.current.value = sheet.title
+            setSaveEditTitle(sheet.title)
+            setSaveEditLabels(sheet.labels)
+            setSaveEditTransposes(sheet.transposes)
+            saveEditTransposesRef.current.value = sheet.transposes.join(" ")
+        }, 0)
+    }
+
     useEffect(() => {
         // load local sheets
-        getSheetRefs().then((res) => {
-            if (!res || !res?.sheets) {
-                return
-            }
+        setTimeout(() => {
+            getSheetRefs().then((res) => {
+                if (!res || !res?.sheets) {
+                    return
+                }
 
-            setLocalSheets(sortedLocalSheets(res.sheets))
-        })
-    }, []);
+                setLocalSheets(sortedLocalSheets(res.sheets))
+            })
+        }, 0)
+    }, [localSheets]);
 
     useEffect(() => {
         if (!isModifyOpen) setSaveEditTransposes(transposes)
     }, [transposes])
+
+    useEffect(() => {
+        if (isModifyOpen?.id) {
+            // edit mode
+            const sheet = localSheets.find((s) => s.id === isModifyOpen.id);
+            requestAnimationFrame(() => {setupEditDialogInputs(sheet)})
+        }
+    }, [isModifyOpen]);
+
 
     return (
         <span id={"sheet-viewer-sheets-portal"}>
@@ -127,7 +160,7 @@ const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, on
                 isOpen={isPortalOpen}
                 onClose={(e) => setIsPortalOpen(false)}
             >
-                <Button onClick={() => setIsModifyOpen(true)}></Button>
+                <Button onClick={() => setIsModifyOpen(true)}/>
 
                 <CardList>
                     {sortedLocalSheets(localSheets, activeId).map((sheet) => (
@@ -138,6 +171,7 @@ const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, on
                             onClick={() => {
                                 onChange(sheet);
                                 setActiveId(sheet.id);
+                                setSheetSelected(sheet)
                             }}
                             selected={activeId === sheet.id}
                             style={{position: "relative"}}
@@ -159,7 +193,7 @@ const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, on
                                     small
                                     minimal
                                     onClick={() => {
-                                        setIsModifyOpen(true)
+                                        setIsModifyOpen({id: sheet.id})
                                     }}
                                 />
                                 <Button
@@ -173,7 +207,7 @@ const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, on
                                             setActiveId(undefined)
                                         }
 
-                                        setLocalSheets(localSheets.filter(item => item.id !== sheet.id))
+                                        setLocalSheets(localSheets.filter((item) => item.id !== sheet.id))
                                     }}
                                 />
                             </div>
@@ -206,6 +240,7 @@ const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, on
                 onClose={(e) => setIsModifyOpen(false)}
             >
                 <InputGroup
+                    inputRef={(ref) => {saveEditTitleRef.current = ref}}
                     onInput={(e) => setSaveEditTitle(e.target.value)}
                     fill={true}
                     leftIcon={"new-drawing"}
@@ -213,6 +248,7 @@ const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, on
                 />
 
                 <TagInput
+                    inputRef={(ref) => {saveEditLabelsRef.current = ref}}
                     leftIcon={"tag"}
                     placeholder={"Labels"}
                     values={saveEditLabels}
@@ -220,6 +256,7 @@ const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, on
                 />
 
                 <TransposeInput
+                    ref={saveEditTransposesRef}
                     toaster={toaster}
                     parentWindowTransposes={transposes}
                     canTranspose={true}
@@ -227,7 +264,7 @@ const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, on
                     onUpdate={setSaveEditTransposes}
                 />
 
-                <Button onClick={handleSave}>Submit</Button>
+                <Button onClick={() => handleSave(isModifyOpen?.id)}>Submit</Button>
             </Dialog>
         </span>
     )
