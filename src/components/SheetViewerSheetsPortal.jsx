@@ -8,7 +8,7 @@ import {
     TagInput,
     InputGroup,
     CardList,
-    Card, EntityTitle, Tag
+    Card, EntityTitle, Tag, Tabs, Tab, TabsExpander
 } from "@blueprintjs/core";
 import {forwardRef, useEffect, useImperativeHandle, useRef, useState} from "react";
 import TransposeInput from "./TransposeInput.jsx";
@@ -16,6 +16,7 @@ import {formatDateForCard, generalAppToastConfig} from "../utils/generalUtils.js
 import {deleteSheetData, getSheetRefs, writeSheetData} from "../services/storage/sheetStorageService.js";
 
 const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, onChange = () => {} }, ref) => {
+    const [mode, setMode] = useState("offline") // "offline", "arijan"
     const [activeId, setActiveId] = useState(undefined)
     const [isPortalOpen, setIsPortalOpen] = useState(false)
     const [isModifyOpen, setIsModifyOpen] = useState(false)
@@ -160,71 +161,84 @@ const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, on
                 isOpen={isPortalOpen}
                 onClose={(e) => setIsPortalOpen(false)}
             >
-                <Button onClick={() => setIsModifyOpen(true)}/>
-
-                <CardList>
-                    {sortedLocalSheets(localSheets, activeId).map((sheet) => (
-                        <Card
-                            key={sheet.id}
-                            className={"sheets-portal-sheet-card"}
-                            interactive={true}
-                            onClick={() => {
-                                onChange(sheet);
-                                setActiveId(sheet.id);
-                                setSheetSelected(sheet)
-                            }}
-                            selected={activeId === sheet.id}
-                            style={{position: "relative"}}
-                        >
-                            <div
-                                style={{
-                                    position: "absolute",
-                                    top: 8,
-                                    right: 8,
-                                    display: "flex",
-                                    gap: 4,
-                                    zIndex: 1,
-                                }}
-                                onClick={(e) => e.stopPropagation()} // prevent parent onClick
-                            >
-                                <Button
-                                    className={"sheets-portal-icon-button"}
-                                    icon="edit"
-                                    small
-                                    minimal
+                {/*<Button onClick={() => setIsModifyOpen(true)}/>*/}
+                <Tabs
+                    key={mode}
+                    animate={true}
+                    size={"large"}
+                    renderActiveTabPanelOnly={true}
+                    onChange={(id, prev, event) => setMode(id)}
+                >
+                    <Tab id={"offline"} title={"Offline"} panel={
+                        // TODO: refactor, dis crap
+                        <CardList>
+                            {sortedLocalSheets(localSheets, activeId).map((sheet) => (
+                                <Card
+                                    key={sheet.id}
+                                    className={"sheets-portal-sheet-card"}
+                                    interactive={true}
                                     onClick={() => {
-                                        setIsModifyOpen({id: sheet.id})
+                                        onChange(sheet);
+                                        setActiveId(sheet.id);
+                                        setSheetSelected(sheet)
                                     }}
-                                />
-                                <Button
-                                    className={"sheets-portal-icon-button"}
-                                    icon="trash"
-                                    small
-                                    minimal
-                                    onClick={() => {
-                                        deleteSheetData(sheet.id)
-                                        if (activeId === sheet.id) {
-                                            setActiveId(undefined)
-                                        }
+                                    selected={activeId === sheet.id}
+                                    style={{position: "relative"}}
+                                >
+                                    <div
+                                        style={{
+                                            position: "absolute",
+                                            top: 8,
+                                            right: 8,
+                                            display: "flex",
+                                            gap: 4,
+                                            zIndex: 1,
+                                        }}
+                                        onClick={(e) => e.stopPropagation()} // prevent parent onClick
+                                    >
+                                        <Button
+                                            className={"sheets-portal-icon-button"}
+                                            icon="edit"
+                                            small
+                                            minimal
+                                            onClick={() => {
+                                                setIsModifyOpen({id: sheet.id})
+                                            }}
+                                        />
+                                        <Button
+                                            className={"sheets-portal-icon-button"}
+                                            icon="trash"
+                                            small
+                                            minimal
+                                            onClick={() => {
+                                                deleteSheetData(sheet.id)
+                                                if (activeId === sheet.id) {
+                                                    setActiveId(undefined)
+                                                }
 
-                                        setLocalSheets(localSheets.filter((item) => item.id !== sheet.id))
-                                    }}
-                                />
-                            </div>
+                                                setLocalSheets(localSheets.filter((item) => item.id !== sheet.id))
+                                            }}
+                                        />
+                                    </div>
 
-                            <EntityTitle
-                                title={sheet.title}
-                                subtitle={<>{formatDateForCard(sheet.dateModified)}</>}
-                                tags={sheet?.labels.map((label, idx) => (
-                                    <Tag key={idx} intent={"none"} minimal={true}>
-                                        {label}
-                                    </Tag>
-                                ))}
+                                    <EntityTitle
+                                        title={sheet.title}
+                                        subtitle={<>{formatDateForCard(sheet.dateModified)}</>}
+                                        tags={sheet?.labels.map((label, idx) => (
+                                            <Tag key={idx} intent={"none"} minimal={true}>
+                                                {label}
+                                            </Tag>
+                                        ))}
 
-                            />
-                        </Card>
-                    ))}
-                </CardList>
+                                    />
+                                </Card>
+                            ))}
+                        </CardList>
+
+                    }/>
+                    <Tab id={"arijan"} title={"Online"} panel={<></>}/>
+                    <TabsExpander/>
+                </Tabs>
             </Drawer>
 
             <Dialog
