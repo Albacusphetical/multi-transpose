@@ -8,15 +8,17 @@ import {
     TagInput,
     InputGroup,
     CardList,
-    Card, EntityTitle, Tag, Tabs, Tab, TabsExpander
+    Card, EntityTitle, Tag, Tabs, Tab, TabsExpander, SegmentedControl
 } from "@blueprintjs/core";
 import {forwardRef, useEffect, useImperativeHandle, useRef, useState} from "react";
 import TransposeInput from "./TransposeInput.jsx";
 import {formatDateForCard, generalAppToastConfig} from "../utils/generalUtils.js";
 import {deleteSheetData, getSheetRefs, writeSheetData} from "../services/storage/sheetStorageService.js";
+import SheetPortalEditButton from "./SheetPortalEditButton.jsx";
+import {invoke} from "@tauri-apps/api";
 
 const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, onChange = () => {} }, ref) => {
-    const [mode, setMode] = useState("offline") // "offline", "arijan"
+    const [mode, setMode] = useState("saved") // "saved", "arijan"
     const [activeId, setActiveId] = useState(undefined)
     const [isPortalOpen, setIsPortalOpen] = useState(false)
     const [isModifyOpen, setIsModifyOpen] = useState(false)
@@ -29,6 +31,8 @@ const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, on
     const [sheetSelected, setSheetSelected] = useState()
 
     const [localSheets, setLocalSheets] = useState({})
+    const [arijanSheets, setArijanSheets] = useState({})
+    const arijanSheetsAPIUrl = "https://vp-sheets.arijan.dev"
 
     useImperativeHandle(ref, () => ({
         openModifyDialog: () => {
@@ -127,6 +131,21 @@ const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, on
     }, [localSheets]);
 
     useEffect(() => {
+        const options = {
+            endpoint: "/api/search",
+            headers: [["Accept", "application/json"]],
+        };
+
+        invoke("proxy_vp_sheets", { opts: options })
+            .then(response => {
+                console.log("API response:", response);
+            })
+            .catch(error => {
+                console.error("Error:", error);
+            });
+    }, [arijanSheets])
+
+    useEffect(() => {
         if (!isModifyOpen) setSaveEditTransposes(transposes)
     }, [transposes])
 
@@ -151,8 +170,21 @@ const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, on
 
             <Drawer
                 style={{padding: 10}}
-                title={"Sheets Portal"}
-                icon={"document"}
+                title={
+                    <div style={{display: "flex", alignItems: "center", gap: 7}}>
+                        Sheets Portal
+                        <SheetPortalEditButton
+                            onClick={() => {
+                                if (sheetSelected?.id) {
+                                    setIsModifyOpen({id: sheet.id})
+                                }
+                                else {
+                                    setIsModifyOpen(true)
+                                }
+                            }}
+                        />
+                    </div>
+                }
                 usePortal={true}
                 canEscapeKeyClose={false}
                 canOutsideClickClose={true}
@@ -161,84 +193,87 @@ const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, on
                 isOpen={isPortalOpen}
                 onClose={(e) => setIsPortalOpen(false)}
             >
-                {/*<Button onClick={() => setIsModifyOpen(true)}/>*/}
-                <Tabs
-                    key={mode}
-                    animate={true}
-                    size={"large"}
-                    renderActiveTabPanelOnly={true}
-                    onChange={(id, prev, event) => setMode(id)}
-                >
-                    <Tab id={"offline"} title={"Offline"} panel={
-                        // TODO: refactor, dis crap
-                        <CardList>
-                            {sortedLocalSheets(localSheets, activeId).map((sheet) => (
-                                <Card
-                                    key={sheet.id}
-                                    className={"sheets-portal-sheet-card"}
-                                    interactive={true}
+                <SegmentedControl
+                    options={[
+                        {
+                            label: "Saved",
+                            value: "saved",
+                            icon: "saved"
+                        },
+                        {
+                            label: "Online",
+                            value: "arijan",
+                            icon: "globe-network"
+                        },
+                    ]}
+                    defaultValue="saved"
+                    onValueChange={(val, _) => {
+                        setMode(val)
+                    }}
+                    style={{width: "fit-content", margin: 15}}
+                />
+
+                <CardList bordered={false}>
+                    {(mode === "saved" ? sortedLocalSheets(localSheets, activeId) : []).map((sheet) => (
+                        <Card
+                            key={sheet.id}
+                            className={"sheets-portal-sheet-card"}
+                            interactive={true}
+                            onClick={() => {
+                                onChange(sheet);
+                                setActiveId(sheet.id);
+                                setSheetSelected(sheet)
+                            }}
+                            selected={activeId === sheet.id}
+                            style={{position: "relative"}}
+                        >
+                            <div
+                                style={{
+                                    position: "absolute",
+                                    top: 8,
+                                    right: 8,
+                                    display: "flex",
+                                    gap: 4,
+                                    zIndex: 1,
+                                }}
+                                onClick={(e) => e.stopPropagation()} // prevent parent onClick
+                            >
+                                <SheetPortalEditButton
+                                    small={true}
                                     onClick={() => {
-                                        onChange(sheet);
-                                        setActiveId(sheet.id);
-                                        setSheetSelected(sheet)
+                                        setIsModifyOpen({id: sheet.id})
                                     }}
-                                    selected={activeId === sheet.id}
-                                    style={{position: "relative"}}
-                                >
-                                    <div
-                                        style={{
-                                            position: "absolute",
-                                            top: 8,
-                                            right: 8,
-                                            display: "flex",
-                                            gap: 4,
-                                            zIndex: 1,
-                                        }}
-                                        onClick={(e) => e.stopPropagation()} // prevent parent onClick
-                                    >
-                                        <Button
-                                            className={"sheets-portal-icon-button"}
-                                            icon="edit"
-                                            small
-                                            minimal
-                                            onClick={() => {
-                                                setIsModifyOpen({id: sheet.id})
-                                            }}
-                                        />
-                                        <Button
-                                            className={"sheets-portal-icon-button"}
-                                            icon="trash"
-                                            small
-                                            minimal
-                                            onClick={() => {
-                                                deleteSheetData(sheet.id)
-                                                if (activeId === sheet.id) {
-                                                    setActiveId(undefined)
-                                                }
+                                />
 
-                                                setLocalSheets(localSheets.filter((item) => item.id !== sheet.id))
-                                            }}
-                                        />
-                                    </div>
+                                <Button
+                                    className={"sheets-portal-icon-button"}
+                                    icon="trash"
+                                    small
+                                    minimal
+                                    onClick={() => {
+                                        deleteSheetData(sheet.id)
+                                        if (activeId === sheet.id) {
+                                            setActiveId(undefined)
+                                        }
 
-                                    <EntityTitle
-                                        title={sheet.title}
-                                        subtitle={<>{formatDateForCard(sheet.dateModified)}</>}
-                                        tags={sheet?.labels.map((label, idx) => (
-                                            <Tag key={idx} intent={"none"} minimal={true}>
-                                                {label}
-                                            </Tag>
-                                        ))}
+                                        setLocalSheets(localSheets.filter((item) => item.id !== sheet.id))
+                                    }}
+                                />
+                            </div>
 
-                                    />
-                                </Card>
-                            ))}
-                        </CardList>
+                            <EntityTitle
+                                title={sheet.title}
+                                subtitle={<>{formatDateForCard(sheet.dateModified)}</>}
+                                tags={sheet?.labels.map((label, idx) => (
+                                    <Tag key={idx} intent={"none"} minimal={true}>
+                                        {label}
+                                    </Tag>
+                                ))}
 
-                    }/>
-                    <Tab id={"arijan"} title={"Online"} panel={<></>}/>
-                    <TabsExpander/>
-                </Tabs>
+                            />
+                        </Card>
+                    ))}
+                </CardList>
             </Drawer>
 
             <Dialog

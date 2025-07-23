@@ -1,9 +1,9 @@
 import {v4 as uuidv4} from "uuid"
 import {getAppDataFilePath, getJSONFile, sanitizeFileName, writeJSONFile} from "../../utils/fileUtils.js";
 import {createDir, exists, removeFile, writeBinaryFile, writeTextFile} from "@tauri-apps/api/fs";
-import {appDataDir} from "@tauri-apps/api/path";
+import {appDataDir, sep} from "@tauri-apps/api/path";
 
-const SHEET_REFS_FILE = "sheets/sheets.json"
+const SHEET_REFS_FILE = `sheets${sep}sheets.json`
 
 export const defaultSheetRefs = {sheets: {}}
 
@@ -13,13 +13,13 @@ export const getSheetRefs = async () => {
 
 export const writeSheetData = async (data) => {
     const sheetBinId = data.metadata?.id ?? uuidv4()
-    const sheetsDirName = await getAppDataFilePath("sheets/")
+    const sheetsDirName = await getAppDataFilePath(`sheets${sep}`)
     const sheetsDirExists = await exists(sheetsDirName)
     if (!sheetsDirExists) {
         await createDir(sheetsDirName)
     }
 
-    const sheetsData = await getJSONFile("sheets/sheets.json", defaultSheetRefs)
+    const sheetsData = await getJSONFile(SHEET_REFS_FILE, defaultSheetRefs)
 
     let res;
 
@@ -44,7 +44,7 @@ export const writeSheetData = async (data) => {
 
                 await writeBinaryFile(path, uint8)
 
-                res = {...data.metadata, type, path: `sheets/${sheetBinId}`}
+                res = {...data.metadata, type, path: `sheets${sep}${sheetBinId}`}
 
                 break
             case "text":
@@ -52,7 +52,7 @@ export const writeSheetData = async (data) => {
 
                 await writeTextFile(path, data.sheetData.content)
 
-                res = {...data.metadata, type, path: `sheets/${sheetBinId}.txt`}
+                res = {...data.metadata, type, path: `sheets${sep}${sheetBinId}.txt`}
                 break
         }
     }
@@ -67,13 +67,13 @@ export const writeSheetData = async (data) => {
 
 export const deleteSheetData = async (id) => {
     const dataPath = await appDataDir()
-    const sheetsDirName = await getAppDataFilePath("sheets/")
+    const sheetsDirName = await getAppDataFilePath(`sheets${sep}`)
     const sheetsDirExists  = await exists(sheetsDirName)
     if (!sheetsDirExists) {
         await createDir(sheetsDirName)
     }
 
-    let sheetsData = await getJSONFile("sheets/sheets.json", defaultSheetRefs)
+    let sheetsData = await getJSONFile(SHEET_REFS_FILE, defaultSheetRefs)
 
     const sheetFilePath = sheetsData.sheets[id]?.path
     delete sheetsData.sheets[id]

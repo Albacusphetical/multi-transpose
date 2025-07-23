@@ -34,8 +34,10 @@ use linux::*;
 mod event_processing;
 mod keyboard;
 mod audio;
+mod vp_sheets;
 
 use crate::keyboard::{TRANSPOSE_DOWN_BIND, TRANSPOSE_UP_BIND, send_key};
+use crate::vp_sheets::proxy_vp_sheets;
 
 use tauri::Manager;
 use tauri_plugin_sql::{Builder, Migration, MigrationKind};
@@ -186,6 +188,7 @@ fn main() {
     tauri::Builder::default()
         .device_event_filter(tauri::DeviceEventFilter::Always)
         .invoke_handler(tauri::generate_handler![set_window_focusable])
+        .invoke_handler(tauri::generate_handler![proxy_vp_sheets])
         .plugin(
             tauri_plugin_sql::Builder::default()
                 // idk why these migrations won't run, these tables will just have to be added from the frontend for now I guess
