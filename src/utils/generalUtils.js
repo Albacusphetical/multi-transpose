@@ -46,8 +46,8 @@ export function spawnWindow(label, options) {
     })
 }
 
-export const onLinkClick = (label, url) => {
-    spawnWindow(label, {url: url, title: label});
+export const onLinkClick = (label, url, title = label) => {
+    spawnWindow(label, {url: url, title: title});
 }
 
 /** https://github.com/tauri-apps/tauri/discussions/3844 **/

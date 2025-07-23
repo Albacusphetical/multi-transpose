@@ -12,7 +12,7 @@ import {
 } from "@blueprintjs/core";
 import {forwardRef, useEffect, useImperativeHandle, useRef, useState} from "react";
 import TransposeInput from "./TransposeInput.jsx";
-import {formatDateForCard, generalAppToastConfig} from "../utils/generalUtils.js";
+import {formatDateForCard, generalAppToastConfig, onLinkClick} from "../utils/generalUtils.js";
 import {deleteSheetData, getSheetRefs, writeSheetData} from "../services/storage/sheetStorageService.js";
 import SheetPortalEditButton from "./SheetPortalEditButton.jsx";
 import {invoke} from "@tauri-apps/api";
@@ -32,7 +32,7 @@ const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, on
 
     const [localSheets, setLocalSheets] = useState({})
     const [arijanSheets, setArijanSheets] = useState({})
-    const arijanSheetsAPIUrl = "https://vp-sheets.arijan.dev"
+    const trelloCardURL = "https://trello.com/c"
 
     useImperativeHandle(ref, () => ({
         openModifyDialog: () => {
@@ -85,20 +85,28 @@ const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, on
         });
     }
 
-    const sortedLocalSheets = (localSheets, activeIndex) => {
-        localSheets = Object.values(localSheets)
-        if (!Array.isArray(localSheets)) return [];
+    const sortedSheets = (sheets, activeIndex, type = "saved") => {
+        console.log(type)
+        sheets = Object.values(sheets)
+        if (!Array.isArray(sheets)) return [];
 
         const hasValidIndex =
             typeof activeIndex === "number" &&
             activeIndex >= 0 &&
-            activeIndex < localSheets.length;
+            activeIndex < sheets.length;
 
-        const selectedSheet = hasValidIndex ? localSheets[activeIndex] : null;
+        const selectedSheet = hasValidIndex ? sheets[activeIndex] : null;
 
-        const sorted = localSheets
+        const comparator = (a, b) => {
+            if (type === "saved") return new Date(b.dateModified) - new Date(a.dateModified)
+
+            // arijan
+            return b.favs - a.favs
+        }
+
+        const sorted = sheets
             .filter((_, i) => i !== activeIndex)
-            .toSorted((a, b) => new Date(b.dateModified) - new Date(a.dateModified));
+            .toSorted(comparator);
 
         if (selectedSheet) {
             sorted.unshift(selectedSheet);
@@ -118,32 +126,42 @@ const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, on
     }
 
     useEffect(() => {
-        // load local sheets
+        // load sheets
         setTimeout(() => {
-            getSheetRefs().then((res) => {
-                if (!res || !res?.sheets) {
-                    return
-                }
+            if (mode === "saved") {
+                getSheetRefs().then((res) => {
+                    if (!res || !res?.sheets) {
+                        return
+                    }
 
-                setLocalSheets(sortedLocalSheets(res.sheets))
-            })
+                    setLocalSheets(sortedSheets(res.sheets))
+                })
+            }
+            else {
+                const options = {
+                    endpoint: "/api/search",
+                };
+
+                invoke("proxy_vp_sheets", { opts: options })
+                    .then(response => {
+                        const formatted = []
+                        for (const sheet of response) {
+                            const sheetObj = {
+                                id: sheet.shortlink,
+                                labels: [sheet.lname],
+                                ...sheet
+                            }
+                            formatted.push(sheetObj)
+                        }
+
+                        setArijanSheets(formatted)
+                    })
+                    .catch(error => {
+                        console.error("Error:", error);
+                    });
+            }
         }, 0)
-    }, [localSheets]);
-
-    useEffect(() => {
-        const options = {
-            endpoint: "/api/search",
-            headers: [["Accept", "application/json"]],
-        };
-
-        invoke("proxy_vp_sheets", { opts: options })
-            .then(response => {
-                console.log("API response:", response);
-            })
-            .catch(error => {
-                console.error("Error:", error);
-            });
-    }, [arijanSheets])
+    }, [mode]); // TODO: needs to react more to user changes
 
     useEffect(() => {
         if (!isModifyOpen) setSaveEditTransposes(transposes)
@@ -152,7 +170,7 @@ const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, on
     useEffect(() => {
         if (isModifyOpen?.id) {
             // edit mode
-            const sheet = localSheets.find((s) => s.id === isModifyOpen.id);
+            const sheet = mode === "saved" ? localSheets.find((s) => s.id === isModifyOpen.id) : arijanSheets.find((s) => s.id === isModifyOpen.id);
             requestAnimationFrame(() => {setupEditDialogInputs(sheet)})
         }
     }, [isModifyOpen]);
@@ -176,7 +194,7 @@ const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, on
                         <SheetPortalEditButton
                             onClick={() => {
                                 if (sheetSelected?.id) {
-                                    setIsModifyOpen({id: sheet.id})
+                                    setIsModifyOpen({id: sheetSelected.id})
                                 }
                                 else {
                                     setIsModifyOpen(true)
@@ -214,7 +232,7 @@ const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, on
                 />
 
                 <CardList bordered={false}>
-                    {(mode === "saved" ? sortedLocalSheets(localSheets, activeId) : []).map((sheet) => (
+                    {(mode === "saved" ? sortedSheets(localSheets, activeId) : sortedSheets(arijanSheets, activeId, "arijan")).map((sheet) => (
                         <Card
                             key={sheet.id}
                             className={"sheets-portal-sheet-card"}
@@ -241,29 +259,58 @@ const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, on
                                 <SheetPortalEditButton
                                     small={true}
                                     onClick={() => {
+                                        // TODO: sheet editing bug, if you didnt select the sheet content in the portal, it will overwrite it with pasted content, not intended
                                         setIsModifyOpen({id: sheet.id})
                                     }}
+                                    mainIcon={mode === "arijan"}
                                 />
 
-                                <Button
-                                    className={"sheets-portal-icon-button"}
-                                    icon="trash"
-                                    small
-                                    minimal
-                                    onClick={() => {
-                                        deleteSheetData(sheet.id)
-                                        if (activeId === sheet.id) {
-                                            setActiveId(undefined)
-                                        }
+                                {mode === "saved" &&
+                                    <Button
+                                        className={"sheets-portal-icon-button"}
+                                        icon="trash"
+                                        small
+                                        minimal
+                                        onClick={() => {
+                                            deleteSheetData(sheet.id)
+                                            if (activeId === sheet.id) {
+                                                setActiveId(undefined)
+                                            }
 
-                                        setLocalSheets(localSheets.filter((item) => item.id !== sheet.id))
-                                    }}
-                                />
+                                            setLocalSheets(localSheets.filter((item) => item.id !== sheet.id))
+                                        }}
+                                    />
+                                }
+
+                                {mode === "arijan" &&
+                                    <Button
+                                        className={"sheets-portal-icon-button"}
+                                        icon="globe-network"
+                                        small
+                                        minimal
+                                        onClick={() => {
+                                            const link = `${trelloCardURL}/${sheet.shortlink}`
+                                            onLinkClick(`c/${sheet.shortlink}`, link, `${sheet.board} - ${link}`)
+                                        }}
+                                    />
+                                }
                             </div>
 
                             <EntityTitle
                                 title={sheet.title}
-                                subtitle={<>{formatDateForCard(sheet.dateModified)}</>}
+                                subtitle={
+                                    <>
+                                        {mode === "saved"
+                                            ?
+                                            formatDateForCard(sheet.dateModified)
+                                            :
+                                            <div style={{display: "flex", alignItems: "center", gap: 5}}>
+                                                <Icon icon={"heart"} color={"lightgray"} />
+                                                <span>{sheet.favs}</span>
+                                            </div>
+                                        }
+                                    </>
+                                }
                                 tags={sheet?.labels.map((label, idx) => (
                                     <Tag key={idx} intent={"none"} minimal={true}>
                                         {label}
