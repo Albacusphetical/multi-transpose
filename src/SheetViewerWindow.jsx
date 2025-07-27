@@ -1,6 +1,7 @@
 import {useEffect, useRef, useState} from "react";
 import {emit, listen} from "@tauri-apps/api/event";
 import {
+    extractTransposeNumbers,
     overlayToasterDefaultProps, preventCaretOnKeydownCallback, preventDefaultEventCallback,
     preventRefreshOnKeydownCallback,
     toastOnPause
@@ -503,7 +504,18 @@ function SheetViewer() {
                         }}
                         onChange={async (sheet) => {
                             setLoading(true)
-                            mainWindow.emit("sheet-viewer", {transposes: sheet.transposes})
+
+                            if (sheet?.trello) {
+                                const opts = {
+                                    endpoint: `/api/sheet?shortlink=${sheet.id}`
+                                }
+
+                                // load sheet data, and do transpose detection
+                                invoke("proxy_vp_sheets", {opts}).then((res) => {
+                                    console.log(extractTransposeNumbers(res.content), res)
+                                })
+                            }
+                            // mainWindow.emit("sheet-viewer", {transposes: sheet.transposes})
 
                             if (sheet?.url) processTextContent(null, sheet.url)
                             else if (sheet?.path) {
