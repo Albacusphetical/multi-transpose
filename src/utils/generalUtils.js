@@ -156,3 +156,8 @@ export const extractTransposeNumbers = (text) => {
 
     return matches;
 };
+
+export const extractImageLinks = (text) => {
+    const imageRegex = /https?:\/\/[^\s"']+\.(?:jpg|jpeg|png|gif|webp|bmp|svg|tiff|ico)(\?[^ \n\r\t"'<>]*)?/gi;
+    return text.match(imageRegex) || [];
+};

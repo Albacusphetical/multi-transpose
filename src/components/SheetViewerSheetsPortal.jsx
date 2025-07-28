@@ -10,12 +10,13 @@ import {
     CardList,
     Card, EntityTitle, Tag, Tabs, Tab, TabsExpander, SegmentedControl
 } from "@blueprintjs/core";
-import {forwardRef, useEffect, useImperativeHandle, useRef, useState} from "react";
+import {forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState} from "react";
 import TransposeInput from "./TransposeInput.jsx";
 import {formatDateForCard, generalAppToastConfig, onLinkClick} from "../utils/generalUtils.js";
 import {deleteSheetData, getSheetRefs, writeSheetData} from "../services/storage/sheetStorageService.js";
 import SheetPortalEditButton from "./SheetPortalEditButton.jsx";
 import {invoke} from "@tauri-apps/api";
+import SheetsPortalSearchBar from "./SheetsPortalSearchBar.jsx";
 
 const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, onChange = () => {} }, ref) => {
     const [mode, setMode] = useState("saved") // "saved", "arijan"
@@ -86,7 +87,6 @@ const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, on
     }
 
     const sortedSheets = (sheets, activeIndex, type = "saved") => {
-        console.log(type)
         sheets = Object.values(sheets)
         if (!Array.isArray(sheets)) return [];
 
@@ -125,6 +125,24 @@ const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, on
         }, 0)
     }
 
+    const searchVpSheets = useCallback(({ title, label, trello }) => {
+        const endpoint = `/api/search?title=${encodeURIComponent(title)}&label=${encodeURIComponent(label.join(" "))}&board=${encodeURIComponent(trello)}`;
+
+        invoke("proxy_vp_sheets", { opts: { endpoint } })
+        .then(response => {
+            const formatted = response.map(sheet => ({
+                id: sheet.shortlink,
+                labels: [sheet.lname],
+                ...sheet,
+            }));
+
+            setArijanSheets(formatted);
+        })
+        .catch(error => {
+            console.error("Search error:", error);
+        });
+    }, [])
+
     useEffect(() => {
         // load sheets
         setTimeout(() => {
@@ -138,27 +156,7 @@ const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, on
                 })
             }
             else {
-                const options = {
-                    endpoint: "/api/search",
-                };
-
-                invoke("proxy_vp_sheets", { opts: options })
-                    .then(response => {
-                        const formatted = []
-                        for (const sheet of response) {
-                            const sheetObj = {
-                                id: sheet.shortlink,
-                                labels: [sheet.lname],
-                                ...sheet
-                            }
-                            formatted.push(sheetObj)
-                        }
-
-                        setArijanSheets(formatted)
-                    })
-                    .catch(error => {
-                        console.error("Error:", error);
-                    });
+                searchVpSheets()
             }
         }, 0)
     }, [mode]); // TODO: needs to react more to user changes
@@ -211,25 +209,31 @@ const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, on
                 isOpen={isPortalOpen}
                 onClose={(e) => setIsPortalOpen(false)}
             >
-                <SegmentedControl
-                    options={[
-                        {
-                            label: "Saved",
-                            value: "saved",
-                            icon: "saved"
-                        },
-                        {
-                            label: "Online",
-                            value: "arijan",
-                            icon: "globe-network"
-                        },
-                    ]}
-                    defaultValue="saved"
-                    onValueChange={(val, _) => {
-                        setMode(val)
-                    }}
-                    style={{width: "fit-content", margin: 15}}
-                />
+                <div>
+                    <SegmentedControl
+                        options={[
+                            {
+                                label: "Saved",
+                                value: "saved",
+                                icon: "saved"
+                            },
+                            {
+                                label: "Online",
+                                value: "arijan",
+                                icon: "globe-network"
+                            },
+                        ]}
+                        defaultValue="saved"
+                        onValueChange={(val, _) => {
+                            setMode(val)
+                        }}
+                        style={{width: "fit-content", margin: 15}}
+                    />
+
+                    <SheetsPortalSearchBar
+                        onSearch={searchVpSheets}
+                    />
+                </div>
 
                 <CardList bordered={false}>
                     {(mode === "saved" ? sortedSheets(localSheets, activeId) : sortedSheets(arijanSheets, activeId, "arijan")).map((sheet) => (
