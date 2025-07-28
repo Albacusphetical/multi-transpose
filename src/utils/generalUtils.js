@@ -106,59 +106,66 @@ export const formatDateForCard = (isoString) => {
     }
 }
 
-// export const extractTransposeNumbers = (text) => {
-//     // Define a regular expression to match the patterns
-//     const regex = /(transpose\s(?:by:\s?|\+?[-]?\d+|[^\s]+?\s?\d+))/gi;
-//
-//     // Find all matches
-//     const matches = text.match(regex);
-//     if (!matches) return []; // Return an empty array if no matches
-//
-//     // Extract the numbers from the matches
-//     const numbers = matches.map(match => {
-//         // For "transpose by: -1" or "transpose by: 1", we capture the number after "by:"
-//         const numberMatch = match.match(/[-+]?\d+/);
-//         return numberMatch ? parseInt(numberMatch[0], 10) : null;
-//     });
-//
-//     // Return only the numbers
-//     return numbers.filter(number => number !== null);
-// }
-
-
 export const extractTransposeNumbers = (text) => {
-    // Normalize line endings
     text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    const lines = text.split('\n');
 
-    // Split first 10 lines to check for bulk transpose block at the start
-    const firstLines = text.split('\n').slice(0, 10).join('\n');
+    // Helper: extract numbers from a cleaned string, require at least 2
+    function extractNumbersFromStr(str) {
+        // Remove unwanted chars except numbers, signs, spaces, and line breaks
+        const cleaned = str.replace(/[^\d\-+\s]/g, ' ');
+        const matches = cleaned.match(/[-+]?\d+/g);
 
-    // Regex to detect "transpose(s|d|ion)" keyword followed closely by a sequence of numbers
-    // Allow optional newlines between keyword and numbers, but only one or two lines max
-    // Capture the numbers sequence (numbers separated by spaces, possibly negative)
-    const bulkRegex = /transpose(?:s|d|ion)?[^\d\-+]*\n?\s*([-+]?\d+(?:\s+[-+]?\d+)*)/im;
+        console.log(matches)
+        if (matches && matches.length >= 2) {
+            return matches.map(Number);
+        }
+        return null;
+    }
 
-    const bulkMatch = bulkRegex.exec(firstLines);
-    if (bulkMatch) {
-        const numbersStr = bulkMatch[1];
-        const numbers = numbersStr.trim().split(/\s+/).map(n => parseInt(n, 10)).filter(n => !isNaN(n));
-        if (numbers.length > 0) {
-            return numbers;
+    // Step 1: Bulk detection within first 10 lines (look for transpos line + block)
+    for (let i = 0; i < Math.min(10, lines.length); i++) {
+        if (/\btranspos\w*/i.test(lines[i])) {
+            let blockLines = [lines[i]];
+            let hasSeenNumberLine = false;
+
+            for (let j = i + 1; j < lines.length; j++) {
+                const line = lines[j];
+                const trimmed = line.trim();
+
+                // Stop if it's an empty line and we’ve already seen numbers
+                if (trimmed === '' && hasSeenNumberLine) break;
+
+                // If line contains at least one digit, set flag
+                if (/\d/.test(trimmed)) {
+                    hasSeenNumberLine = true;
+                }
+
+                // Include all non-empty lines (even formatting) until stop
+                if (trimmed !== '' || !hasSeenNumberLine) {
+                    blockLines.push(line);
+                }
+            }
+
+            const blockText = blockLines.join(' ');
+            console.log("Candidate block:", blockText);
+
+            const nums = extractNumbersFromStr(blockText);
+            console.log(nums)
+            if (nums) {
+                return nums;
+            }
         }
     }
 
-    // If no bulk transpose block detected at start, search whole text for inline transpose numbers
-
-    const inlineRegex = /transpose(?:s|d|ion)?(?:\s+by:?\s*|\s+is\s+)?([-+]?\d+)/gi;
+    // Step 2: Fallback inline detection anywhere in text (less priority)
+    const inlineRegex = /\btranspos\w*[^-\d\n]{0,20}?([-+]?\d+)/gi;
     const matches = [];
     let match;
-
     while ((match = inlineRegex.exec(text)) !== null) {
         const num = parseInt(match[1], 10);
-        if (!isNaN(num)) {
-            matches.push(num);
-        }
+        if (!isNaN(num)) matches.push(num);
     }
 
     return matches;
-}
+};
