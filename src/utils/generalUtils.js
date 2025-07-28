@@ -107,58 +107,45 @@ export const formatDateForCard = (isoString) => {
 }
 
 export const extractTransposeNumbers = (text) => {
+    // big shout out to chatgpt for saving me from painful regex! ask it about this hell beneath
+
+    // Normalize line endings
     text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
     const lines = text.split('\n');
+    const first10 = lines.slice(0, 10);
 
-    // Helper: extract numbers from a cleaned string, require at least 2
-    function extractNumbersFromStr(str) {
-        // Remove unwanted chars except numbers, signs, spaces, and line breaks
-        const cleaned = str.replace(/[^\d\-+\s]/g, ' ');
-        const matches = cleaned.match(/[-+]?\d+/g);
-
-        console.log(matches)
-        if (matches && matches.length >= 2) {
-            return matches.map(Number);
-        }
-        return null;
+    const isLikelyBulkTrigger = (line) => {
+        if (!/\btranspos\w*/i.test(line)) return false;
+        if (/\[.*?\]\(.*?\)/.test(line) || /https?:\/\//i.test(line)) return false;
+        if (/[,.()]/.test(line) && !/\d/.test(line)) return false;
+        return true;
     }
 
-    // Step 1: Bulk detection within first 10 lines (look for transpos line + block)
-    for (let i = 0; i < Math.min(10, lines.length); i++) {
-        if (/\btranspos\w*/i.test(lines[i])) {
-            let blockLines = [lines[i]];
-            let hasSeenNumberLine = false;
+    // Step 1: Bulk detection in the first 10 lines
+    for (let i = 0; i < first10.length; i++) {
+        const line = first10[i];
+        if (isLikelyBulkTrigger(line)) {
+            for (let j = i + 1; j < first10.length; j++) {
+                const raw = first10[j].trim();
+                if (!raw) continue;
 
-            for (let j = i + 1; j < lines.length; j++) {
-                const line = lines[j];
-                const trimmed = line.trim();
+                const cleaned = raw.replace(/\\(?=[-+]?\d)/g, '');
 
-                // Stop if it's an empty line and we’ve already seen numbers
-                if (trimmed === '' && hasSeenNumberLine) break;
+                // Stop parsing at the first non-number/space character
+                const bulkMatch = cleaned.match(/^([ \t]*[-+]?\d+\b[ \t]*)+/);
+                if (!bulkMatch) break;
 
-                // If line contains at least one digit, set flag
-                if (/\d/.test(trimmed)) {
-                    hasSeenNumberLine = true;
+                const numbers = bulkMatch[0].match(/[-+]?\d+/g);
+                if (numbers && numbers.length >= 2) {
+                    return numbers.map(n => parseInt(n, 10));
                 }
-
-                // Include all non-empty lines (even formatting) until stop
-                if (trimmed !== '' || !hasSeenNumberLine) {
-                    blockLines.push(line);
-                }
-            }
-
-            const blockText = blockLines.join(' ');
-            console.log("Candidate block:", blockText);
-
-            const nums = extractNumbersFromStr(blockText);
-            console.log(nums)
-            if (nums) {
-                return nums;
+                break; // Only one line is allowed after trigger
             }
         }
     }
 
-    // Step 2: Fallback inline detection anywhere in text (less priority)
+    // Step 2: Inline fallback
     const inlineRegex = /\btranspos\w*[^-\d\n]{0,20}?([-+]?\d+)/gi;
     const matches = [];
     let match;

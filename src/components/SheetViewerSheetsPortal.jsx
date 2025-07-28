@@ -139,7 +139,7 @@ const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, on
             }
             else {
                 const options = {
-                    endpoint: "/api/search?label=multi-transposed",
+                    endpoint: "/api/search",
                 };
 
                 invoke("proxy_vp_sheets", { opts: options })
