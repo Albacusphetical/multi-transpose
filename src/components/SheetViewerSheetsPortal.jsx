@@ -8,7 +8,7 @@ import {
     TagInput,
     InputGroup,
     CardList,
-    Card, EntityTitle, Tag, Tabs, Tab, TabsExpander, SegmentedControl
+    Card, EntityTitle, Tag, Tabs, Tab, TabsExpander, SegmentedControl, Spinner
 } from "@blueprintjs/core";
 import {forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState} from "react";
 import TransposeInput from "./TransposeInput.jsx";
@@ -29,8 +29,9 @@ const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, on
     const saveEditTitleRef = useRef(null)
     const saveEditLabelsRef = useRef(null)
     const saveEditTransposesRef = useRef()
-    const [sheetSelected, setSheetSelected] = useState()
 
+    const [sheetsLoading, setSheetsLoading] = useState(true)
+    const [sheetSelected, setSheetSelected] = useState()
     const [localSheets, setLocalSheets] = useState({})
     const [arijanSheets, setArijanSheets] = useState({})
     const trelloCardURL = "https://trello.com/c"
@@ -125,8 +126,9 @@ const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, on
         }, 0)
     }
 
-    const searchVpSheets = useCallback(({ title, label, trello }) => {
-        const endpoint = `/api/search?title=${encodeURIComponent(title)}&label=${encodeURIComponent(label.join(" "))}&board=${encodeURIComponent(trello)}`;
+    const searchVpSheets = useCallback(( {title, label, trello} ) => {
+        setSheetsLoading(true)
+        const endpoint = `/api/search?title=${encodeURIComponent(title)}&label=${encodeURIComponent(label?.join(" "))}&board=${encodeURIComponent(trello)}`;
 
         invoke("proxy_vp_sheets", { opts: { endpoint } })
         .then(response => {
@@ -140,20 +142,45 @@ const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, on
         })
         .catch(error => {
             console.error("Search error:", error);
-        });
+        })
+        .finally(() => {
+            setSheetsLoading(false)
+        })
+    }, [])
+
+    const searchLocalSheets = useCallback(({title = "", label = []}) => {
+        setSheetsLoading(true)
+        getSheetRefs().then((res) => {
+            if (!res || !res?.sheets) {
+                return
+            }
+            const filtered = Object.fromEntries(
+                Object.entries(res?.sheets).filter(([key, sheet]) => {
+                    console.log(title)
+                    const titleMatch =
+                        title === "" || sheet.title?.toLowerCase().includes(title?.toLowerCase());
+
+                    const labelsMatch =
+                        label.length === 0 ||
+                        (Array.isArray(sheet.labels) &&
+                            label.every(l => sheet.labels.includes(l)));
+
+                    return titleMatch && labelsMatch;
+                })
+            );
+
+            setLocalSheets(sortedSheets(filtered))
+        })
+        .finally(() => {
+            setSheetsLoading(false)
+        })
     }, [])
 
     useEffect(() => {
         // load sheets
         setTimeout(() => {
             if (mode === "saved") {
-                getSheetRefs().then((res) => {
-                    if (!res || !res?.sheets) {
-                        return
-                    }
-
-                    setLocalSheets(sortedSheets(res.sheets))
-                })
+                searchLocalSheets()
             }
             else {
                 searchVpSheets()
@@ -231,98 +258,101 @@ const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, on
                     />
 
                     <SheetsPortalSearchBar
-                        onSearch={searchVpSheets}
+                        style={{marginLeft: 15}}
+                        onSearch={mode === "saved" ? searchLocalSheets : searchVpSheets}
                     />
                 </div>
 
                 <CardList bordered={false}>
-                    {(mode === "saved" ? sortedSheets(localSheets, activeId) : sortedSheets(arijanSheets, activeId, "arijan")).map((sheet) => (
-                        <Card
-                            key={sheet.id}
-                            className={"sheets-portal-sheet-card"}
-                            interactive={true}
-                            onClick={() => {
-                                onChange(sheet);
-                                setActiveId(sheet.id);
-                                setSheetSelected(sheet)
-                            }}
-                            selected={activeId === sheet.id}
-                            style={{position: "relative"}}
-                        >
-                            <div
-                                style={{
-                                    position: "absolute",
-                                    top: 8,
-                                    right: 8,
-                                    display: "flex",
-                                    gap: 4,
-                                    zIndex: 1,
+                    {sheetsLoading ? <Spinner/>
+                        :
+                        (mode === "saved" ? sortedSheets(localSheets, activeId) : sortedSheets(arijanSheets, activeId, "arijan")).map((sheet) => (
+                            <Card
+                                key={sheet.id}
+                                className={"sheets-portal-sheet-card"}
+                                interactive={true}
+                                onClick={() => {
+                                    onChange(sheet);
+                                    setActiveId(sheet.id);
+                                    setSheetSelected(sheet)
                                 }}
-                                onClick={(e) => e.stopPropagation()} // prevent parent onClick
+                                selected={activeId === sheet.id}
+                                style={{position: "relative"}}
                             >
-                                <SheetPortalEditButton
-                                    small={true}
-                                    onClick={() => {
-                                        // TODO: sheet editing bug, if you didnt select the sheet content in the portal, it will overwrite it with pasted content, not intended
-                                        setIsModifyOpen({id: sheet.id})
+                                <div
+                                    style={{
+                                        position: "absolute",
+                                        top: 8,
+                                        right: 8,
+                                        display: "flex",
+                                        gap: 4,
+                                        zIndex: 1,
                                     }}
-                                    mainIcon={mode === "arijan"}
-                                />
-
-                                {mode === "saved" &&
-                                    <Button
-                                        className={"sheets-portal-icon-button"}
-                                        icon="trash"
-                                        small
-                                        minimal
+                                    onClick={(e) => e.stopPropagation()} // prevent parent onClick
+                                >
+                                    <SheetPortalEditButton
+                                        small={true}
                                         onClick={() => {
-                                            deleteSheetData(sheet.id)
-                                            if (activeId === sheet.id) {
-                                                setActiveId(undefined)
+                                            // TODO: sheet editing bug, if you didnt select the sheet content in the portal, it will overwrite it with pasted content, not intended
+                                            setIsModifyOpen({id: sheet.id})
+                                        }}
+                                        mainIcon={mode === "arijan"}
+                                    />
+
+                                    {mode === "saved" &&
+                                        <Button
+                                            className={"sheets-portal-icon-button"}
+                                            icon="trash"
+                                            small
+                                            minimal
+                                            onClick={() => {
+                                                deleteSheetData(sheet.id)
+                                                if (activeId === sheet.id) {
+                                                    setActiveId(undefined)
+                                                }
+
+                                                setLocalSheets(localSheets.filter((item) => item.id !== sheet.id))
+                                            }}
+                                        />
+                                    }
+
+                                    {mode === "arijan" &&
+                                        <Button
+                                            className={"sheets-portal-icon-button"}
+                                            icon="globe-network"
+                                            small
+                                            minimal
+                                            onClick={() => {
+                                                const link = `${trelloCardURL}/${sheet.shortlink}`
+                                                onLinkClick(`c/${sheet.shortlink}`, link, `${sheet.board} - ${link}`)
+                                            }}
+                                        />
+                                    }
+                                </div>
+
+                                <EntityTitle
+                                    title={sheet.title}
+                                    subtitle={
+                                        <>
+                                            {mode === "saved"
+                                                ?
+                                                formatDateForCard(sheet.dateModified)
+                                                :
+                                                <div style={{display: "flex", alignItems: "center", gap: 5}}>
+                                                    <Icon icon={"heart"} color={"lightgray"} />
+                                                    <span>{sheet.favs}</span>
+                                                </div>
                                             }
+                                        </>
+                                    }
+                                    tags={sheet?.labels.map((label, idx) => (
+                                        <Tag key={idx} intent={"none"} minimal={true}>
+                                            {label}
+                                        </Tag>
+                                    ))}
 
-                                            setLocalSheets(localSheets.filter((item) => item.id !== sheet.id))
-                                        }}
-                                    />
-                                }
-
-                                {mode === "arijan" &&
-                                    <Button
-                                        className={"sheets-portal-icon-button"}
-                                        icon="globe-network"
-                                        small
-                                        minimal
-                                        onClick={() => {
-                                            const link = `${trelloCardURL}/${sheet.shortlink}`
-                                            onLinkClick(`c/${sheet.shortlink}`, link, `${sheet.board} - ${link}`)
-                                        }}
-                                    />
-                                }
-                            </div>
-
-                            <EntityTitle
-                                title={sheet.title}
-                                subtitle={
-                                    <>
-                                        {mode === "saved"
-                                            ?
-                                            formatDateForCard(sheet.dateModified)
-                                            :
-                                            <div style={{display: "flex", alignItems: "center", gap: 5}}>
-                                                <Icon icon={"heart"} color={"lightgray"} />
-                                                <span>{sheet.favs}</span>
-                                            </div>
-                                        }
-                                    </>
-                                }
-                                tags={sheet?.labels.map((label, idx) => (
-                                    <Tag key={idx} intent={"none"} minimal={true}>
-                                        {label}
-                                    </Tag>
-                                ))}
-
-                            />
-                        </Card>
+                                />
+                            </Card>
                     ))}
                 </CardList>
             </Drawer>
