@@ -109,6 +109,7 @@ export const formatDateForCard = (isoString) => {
 export const extractTransposeNumbers = (text) => {
     // big shout out to chatgpt for saving me from painful regex! ask it about this hell beneath
 
+
     // Normalize line endings
     text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
@@ -116,7 +117,7 @@ export const extractTransposeNumbers = (text) => {
     const first10 = lines.slice(0, 10);
 
     const isLikelyBulkTrigger = (line) => {
-        if (!/\btranspos\w*/i.test(line)) return false;
+        if (!/\btran\w*/i.test(line)) return false;
         if (/\[.*?\]\(.*?\)/.test(line) || /https?:\/\//i.test(line)) return false;
         if (/[,.()]/.test(line) && !/\d/.test(line)) return false;
         return true;
@@ -146,7 +147,7 @@ export const extractTransposeNumbers = (text) => {
     }
 
     // Step 2: Inline fallback
-    const inlineRegex = /\btranspos\w*[^-\d\n]{0,20}?([-+]?\d+)/gi;
+    const inlineRegex = /\btran\w*[^-\d\n]{0,20}?([-+]?\d+)/gi;
     const matches = [];
     let match;
     while ((match = inlineRegex.exec(text)) !== null) {

@@ -6,7 +6,7 @@ const SheetsPortalSearchBar = ({ onSearch, style = {} }) => {
     const [expanded, setExpanded] = useState(false);
     const [titleQuery, setTitleQuery] = useState("");
     const [labels, setLabels] = useState([]);
-    const [trelloName, setTrelloName] = useState("");
+    const [sourceName, setSourceName] = useState("");
 
     const debouncedSearch = React.useMemo(() => {
         return debounce((title, label, trello) => {
@@ -16,12 +16,12 @@ const SheetsPortalSearchBar = ({ onSearch, style = {} }) => {
 
     useEffect(() => {
         debouncedSearch.cancel();
-        debouncedSearch(titleQuery.trim(), labels.map(l => l.trim()).filter(Boolean), trelloName.trim());
+        debouncedSearch(titleQuery.trim(), labels.map(l => l.trim()).filter(Boolean), sourceName.trim());
 
         return () => {
             debouncedSearch.cancel();
         };
-    }, [titleQuery, labels, trelloName, debouncedSearch]);
+    }, [titleQuery, labels, sourceName, debouncedSearch]);
 
     return (
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -60,9 +60,9 @@ const SheetsPortalSearchBar = ({ onSearch, style = {} }) => {
                     />
                     <InputGroup
                         leftIcon="user"
-                        placeholder="Trello name"
-                        value={trelloName}
-                        onChange={(e) => setTrelloName(e.target.value)}
+                        placeholder="Source name (trello, etc.)"
+                        value={sourceName}
+                        onChange={(e) => setSourceName(e.target.value)}
                     />
                 </Card>
             </Collapse>

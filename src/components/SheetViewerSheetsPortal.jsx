@@ -12,7 +12,7 @@ import {
 } from "@blueprintjs/core";
 import {forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState} from "react";
 import TransposeInput from "./TransposeInput.jsx";
-import {formatDateForCard, generalAppToastConfig, onLinkClick} from "../utils/generalUtils.js";
+import {extractTransposeNumbers, formatDateForCard, generalAppToastConfig, onLinkClick} from "../utils/generalUtils.js";
 import {deleteSheetData, getSheetRefs, writeSheetData} from "../services/storage/sheetStorageService.js";
 import SheetPortalEditButton from "./SheetPortalEditButton.jsx";
 import {invoke} from "@tauri-apps/api";
@@ -26,9 +26,13 @@ const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, on
     const [saveEditTitle, setSaveEditTitle] = useState(undefined)
     const [saveEditLabels, setSaveEditLabels] = useState([])
     const [saveEditTransposes, setSaveEditTransposes] = useState([])
+    const [saveEditSourceName, setSaveEditSourceName] = useState(undefined)
+    const [saveEditSourceLink, setSaveEditSourceLink] = useState(undefined)
     const saveEditTitleRef = useRef(null)
     const saveEditLabelsRef = useRef(null)
     const saveEditTransposesRef = useRef()
+    const saveEditSourceNameRef = useRef(null)
+    const saveEditSourceLinkRef = useRef(null)
 
     const [sheetsLoading, setSheetsLoading] = useState(true)
     const [sheetSelected, setSheetSelected] = useState()
@@ -118,15 +122,33 @@ const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, on
 
     const setupEditDialogInputs = (sheet) => {
         setTimeout(() => {
+            const nameSource = sheet?.sourceName ?? sheet?.board ?? ""
+            const linkSource = sheet?.sourceLink ?? ""
             saveEditTitleRef.current.value = sheet.title
+            saveEditSourceNameRef.current.value = nameSource
+            saveEditSourceLinkRef.current.value = linkSource
             setSaveEditTitle(sheet.title)
+            setSaveEditSourceName(nameSource)
+            setSaveEditSourceLink(linkSource)
             setSaveEditLabels(sheet.labels)
             setSaveEditTransposes(sheet.transposes)
-            saveEditTransposesRef.current.value = sheet.transposes.join(" ")
+            saveEditTransposesRef.current.value = sheet?.transposes?.join(" ") ?? ""
+
+            // get transpose from sheet content
+            invoke("proxy_vp_sheets", { opts: { endpoint: `/api/sheet?shortlink=${sheet.id}`} })
+            .then(res => {
+                let transposes = extractTransposeNumbers(res.content)
+                if (saveEditTransposesRef.current.value === "") {
+                    transposes = transposes.join(" ")
+                    saveEditTransposesRef.current.value = transposes
+                    setSaveEditTransposes(transposes)
+                }
+                // TODO: create OCR method for transpose extract from images
+            })
         }, 0)
     }
 
-    const searchVpSheets = useCallback(( {title, label, trello} ) => {
+    const searchVpSheets = useCallback(( {title = "", label = [], trello = ""} ) => {
         setSheetsLoading(true)
         const endpoint = `/api/search?title=${encodeURIComponent(title)}&label=${encodeURIComponent(label?.join(" "))}&board=${encodeURIComponent(trello)}`;
 
@@ -135,6 +157,8 @@ const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, on
             const formatted = response.map(sheet => ({
                 id: sheet.shortlink,
                 labels: [sheet.lname],
+                sourceName: sheet.board,
+                sourceLink: `${trelloCardURL}/${sheet.shortlink}`,
                 ...sheet,
             }));
 
@@ -148,15 +172,15 @@ const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, on
         })
     }, [])
 
-    const searchLocalSheets = useCallback(({title = "", label = []}) => {
+    const searchLocalSheets = useCallback(({title = "", label = [], source = ""}) => {
         setSheetsLoading(true)
         getSheetRefs().then((res) => {
             if (!res || !res?.sheets) {
                 return
             }
+
             const filtered = Object.fromEntries(
-                Object.entries(res?.sheets).filter(([key, sheet]) => {
-                    console.log(title)
+                Object.entries(res?.sheets).filter(([_, sheet]) => {
                     const titleMatch =
                         title === "" || sheet.title?.toLowerCase().includes(title?.toLowerCase());
 
@@ -165,7 +189,10 @@ const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, on
                         (Array.isArray(sheet.labels) &&
                             label.every(l => sheet.labels.includes(l)));
 
-                    return titleMatch && labelsMatch;
+                    const sourceMatch =
+                        source === "" || sheet.sourceName.toLowerCase().includes(source?.toLowerCase())
+
+                    return titleMatch && labelsMatch && sourceMatch;
                 })
             );
 
@@ -392,6 +419,22 @@ const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, on
                     canTranspose={true}
                     backend={false}
                     onUpdate={setSaveEditTransposes}
+                />
+
+                <InputGroup
+                    inputRef={(ref) => {saveEditSourceNameRef.current = ref}}
+                    onInput={(e) => setSaveEditSourceName(e.target.value)}
+                    fill={true}
+                    leftIcon={"globe"}
+                    placeholder={"Enter source name (trello, etc.)"}
+                />
+
+                <InputGroup
+                    inputRef={(ref) => {saveEditSourceLinkRef.current = ref}}
+                    onInput={(e) => setSaveEditSourceLink(e.target.value)}
+                    fill={true}
+                    leftIcon={"globe"}
+                    placeholder={"Enter source link (trello, etc.)"}
                 />
 
                 <Button onClick={() => handleSave(isModifyOpen?.id)}>Submit</Button>
