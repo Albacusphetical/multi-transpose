@@ -1,4 +1,5 @@
 import {WebviewWindow} from "@tauri-apps/api/window";
+import Tesseract from "tesseract.js";
 
 export const overlayToasterDefaultProps = {position: "top", maxToasts: 1, canEscapeKeyClear: true}
 export const generalAppToastConfig = {isCloseButtonShown: false, icon: 'key'}
@@ -162,3 +163,20 @@ export const extractImageLinks = (text) => {
     const imageRegex = /https?:\/\/[^\s"']+\.(?:jpg|jpeg|png|gif|webp|bmp|svg|tiff|ico)(\?[^ \n\r\t"'<>]*)?/gi;
     return text.match(imageRegex) || [];
 };
+
+export const extractImageText = async (imgData) => {
+    try {
+        const { data: { text } } = await Tesseract.recognize(
+            imgData.path,
+            "eng",
+            {
+                logger: (m) => console.log(m)
+            }
+        )
+        return text
+    }
+    catch (e) {
+        console.error(e)
+        return ""
+    }
+}

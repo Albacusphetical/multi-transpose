@@ -12,7 +12,13 @@ import {
 } from "@blueprintjs/core";
 import {forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState} from "react";
 import TransposeInput from "./TransposeInput.jsx";
-import {extractTransposeNumbers, formatDateForCard, generalAppToastConfig, onLinkClick} from "../utils/generalUtils.js";
+import {
+    extractImageText,
+    extractTransposeNumbers,
+    formatDateForCard,
+    generalAppToastConfig,
+    onLinkClick
+} from "../utils/generalUtils.js";
 import {deleteSheetData, getSheetRefs, writeSheetData} from "../services/storage/sheetStorageService.js";
 import SheetPortalEditButton from "./SheetPortalEditButton.jsx";
 import {invoke} from "@tauri-apps/api";
@@ -143,7 +149,6 @@ const SheetViewerSheetsPortal = forwardRef(({ sheetData, toaster, transposes, on
                     saveEditTransposesRef.current.value = transposes
                     setSaveEditTransposes(transposes)
                 }
-                // TODO: create OCR method for transpose extract from images
             })
         }, 0)
     }
